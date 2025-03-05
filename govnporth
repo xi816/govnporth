@@ -1,0 +1,128 @@
+#!/usr/bin/python3
+from sys import argv;
+
+# assert
+def ass(cond: bool, msg: str = "assertion failed"):
+  if (not cond):
+    print(f"{argv[0]}: fatal error: {msg}");
+    exit(1);
+
+iota_counter = 0;
+def iota(reset=False):
+  global iota_counter;
+  if (reset):
+    iota_counter = 0;
+  result = iota_counter;
+  iota_counter += 1;
+  return result;
+
+OP_PUSH   = iota(1);
+OP_PLUS   = iota();
+OP_MINUS  = iota();
+OP_DUMP   = iota();
+COUNT_OPS = iota();
+
+push  = lambda x: (OP_PUSH, x);
+plus  = lambda  : (OP_PLUS,);
+minus = lambda  : (OP_MINUS,);
+dump  = lambda  : (OP_DUMP,);
+
+def simulate_program(program):
+  stack = [];
+  ass(COUNT_OPS == 4, "exhaustive handling of operations in simulation mode");
+  for op in program:
+    if (op[0] == OP_PUSH):
+      stack.append(op[1]);
+    elif (op[0] == OP_PLUS):
+      a = stack.pop();
+      b = stack.pop();
+      stack.append(a + b);
+    elif (op[0] == OP_MINUS):
+      a = stack.pop();
+      b = stack.pop();
+      stack.append(b - a);
+    elif (op[0] == OP_DUMP):
+      a = stack.pop();
+      print(a);
+
+def compile_program(program, out_fp):
+  ass(COUNT_OPS == 4, "exhaustive handling of operations in simulation mode");
+  with open(out_fp, "w") as out:
+    out.write("jmp _porth_start\n");
+    out.write("write:\n");
+    out.write("  dex %cx\n");
+    out.write(".loop:\n");
+    out.write("  lodb %si %ax\n");
+    out.write("  push %ax\n");
+    out.write("  int $02\n");
+    out.write("  loop .loop\n");
+    out.write("  ret\n");
+    out.write("\n");
+    out.write("puti:\n");
+    out.write("  mov %gi puti_buf\n");
+    out.write("  add %gi 7\n");
+    out.write(".loop:\n");
+    out.write("  div %ax 10 ; Divide and get the remainder into %dx\n");
+    out.write("  add %dx 48 ; Convert to ASCII\n");
+    out.write("  stob %gi %dx\n");
+    out.write("  sub %gi 2\n");
+    out.write("  cmp %ax $00\n");
+    out.write("  jne .loop\n");
+    out.write("\n");
+    out.write("  mov %si puti_buf\n");
+    out.write("  mov %cx 8\n");
+    out.write("  call write\n");
+    out.write("  push $0A\n");
+    out.write("  int 2\n");
+    out.write("  ret\n");
+    out.write("puti_buf: reserve 8 bytes\n");
+    out.write("_porth_start:\n");
+    for op in program:
+      if (op[0] == OP_PUSH):
+        out.write("  ; push %d\n" % op[1]);
+        out.write("  push %d\n" % op[1]);
+      elif (op[0] == OP_PLUS):
+        out.write("  ; plus\n");
+        out.write("  pop %ax\n");
+        out.write("  pop %bx\n");
+        out.write("  add %ax %bx\n");
+        out.write("  push %ax\n");
+      elif (op[0] == OP_MINUS):
+        out.write("  ; minus\n");
+        out.write("  pop %ax\n");
+        out.write("  pop %bx\n");
+        out.write("  sub %bx %ax\n");
+        out.write("  push %ax\n");
+      elif (op[0] == OP_DUMP):
+        out.write("  ; dump\n");
+        out.write("  pop %ax\n");
+        out.write("  call puti\n");
+      else:
+        ass(0, "unreachable");
+    out.write("  hlt\n");
+
+# TODO: unhardcode program
+program = [
+  push(34), push(35), plus(), dump(),
+];
+
+def main(argc: int, argv: list):
+  if (argc < 2):
+    print("Usage: govnporth <SUBCOMMAND> [ARGS]");
+    print("Subcommands:");
+    print("  -s      Simulate the program");
+    print("  -c      Compile the program");
+    print("ERROR: no subcommand is provided");
+    return 1;
+  subcommand = argv[1];
+  match subcommand:
+    case "-s":
+      simulate_program(program);
+    case "-c":
+        compile_program(program, "output.asm");
+    case _:
+      ass(0, f"unknown subcommand {subcommand}");
+
+  return 0;
+
+exit(main(len(argv), argv));
