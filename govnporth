@@ -16,6 +16,8 @@ def iota(reset=False):
   iota_counter += 1;
   return result;
 
+ISSPACE   = " \0\n\t";
+
 OP_PUSH   = iota(1);
 OP_PLUS   = iota();
 OP_MINUS  = iota();
@@ -23,9 +25,49 @@ OP_DUMP   = iota();
 COUNT_OPS = iota();
 
 push  = lambda x: (OP_PUSH, x);
-plus  = lambda  : (OP_PLUS,);
-minus = lambda  : (OP_MINUS,);
-dump  = lambda  : (OP_DUMP,);
+plus  = lambda:   (OP_PLUS,);
+minus = lambda:   (OP_MINUS,);
+dump  = lambda:   (OP_DUMP,);
+
+def read_word(src, pos, row, column):
+  while (src[pos] not in ISSPACE):
+    pos += 1;
+    row += 1;
+  return pos, row, column;
+
+def lex_word(src, pos, row, column):
+  if (src[pos].isdigit()):
+    newpos, row, column = read_word(src, pos, row, column);
+    return newpos, row, column, push(int(src[pos:newpos]));
+  elif (src[pos] == "+"):
+    return pos+1, row, column, plus();
+  elif (src[pos] == "-"):
+    return pos+1, row, column, minus();
+  elif (src[pos] == "."):
+    return pos+1, row, column, dump();
+  elif (src[pos] in ISSPACE):
+    while ((pos < len(src)) and (src[pos] in ISSPACE)):
+      pos += 1;
+      row += 1;
+    return pos, row, column, "";
+  else:
+    ass(0, "unknown character found while lexing: %02X (`%c`)" % (ord(src[pos]), src[pos]));
+
+def lex_file(filename):
+  try:
+    with open(filename, "r") as fl:
+      src = fl.read();
+  except:
+    ass(0, "file `%s` not found" % filename);
+  srcl:   int = len(src);
+  pos:    int = 0;
+  row:    int = 1;
+  column: int = 1;
+  ir:     list = [];
+  while (pos < srcl):
+    pos, row, column, ir_token = lex_word(src, pos, row, column);
+    if (ir_token): ir.append(ir_token);
+  return ir;
 
 def simulate_program(program):
   stack = [];
@@ -101,25 +143,25 @@ def compile_program(program, out_fp):
         ass(0, "unreachable");
     out.write("  hlt\n");
 
-# TODO: unhardcode program
-program = [
-  push(34), push(35), plus(), dump(),
-];
-
 def main(argc: int, argv: list):
-  if (argc < 2):
-    print("Usage: govnporth <SUBCOMMAND> [ARGS]");
+  if (argc < 3):
+    print("Usage: govnporth <SUBCOMMAND> <FILE>");
     print("Subcommands:");
     print("  -s      Simulate the program");
     print("  -c      Compile the program");
-    print("ERROR: no subcommand is provided");
+    print("ERROR: no subcommand/filename is provided");
     return 1;
   subcommand = argv[1];
+  infile = argv[2];
   match subcommand:
     case "-s":
+      program = lex_file(infile);
+      print(program);
       simulate_program(program);
     case "-c":
-        compile_program(program, "output.asm");
+      program = lex_file(infile);
+      print(program);
+      compile_program(program, "output.asm");
     case _:
       ass(0, f"unknown subcommand {subcommand}");
 

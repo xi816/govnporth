@@ -39,4 +39,16 @@ _porth_start:
   ; dump
   pop %ax
   call puti
+  ; push 480
+  push 480
+  ; push 60
+  push 60
+  ; minus
+  pop %ax
+  pop %bx
+  sub %bx %ax
+  push %ax
+  ; dump
+  pop %ax
+  call puti
   hlt
