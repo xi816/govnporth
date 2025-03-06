@@ -7,7 +7,6 @@ write:
   int $02
   loop .loop
   ret
-
 puti:
   mov %gi puti_buf
   add %gi 7
@@ -18,12 +17,20 @@ puti:
   sub %gi 2
   cmp %ax $00
   jne .loop
-
   mov %si puti_buf
   mov %cx 8
   call write
   push $0A
   int 2
+  call puti_clr
+  ret
+puti_clr:
+  mov %si puti_buf
+  mov %ax $00
+  mov %cx 8
+.loop:
+  stob %si %ax
+  loop .loop
   ret
 puti_buf: reserve 8 bytes
 _porth_start:
@@ -39,14 +46,14 @@ _porth_start:
   ; dump
   pop %ax
   call puti
-  ; push 480
-  push 480
-  ; push 60
-  push 60
-  ; minus
+  ; push 2
+  push 2
+  ; push 3
+  push 3
+  ; plus
   pop %ax
   pop %bx
-  sub %bx %ax
+  add %ax %bx
   push %ax
   ; dump
   pop %ax
