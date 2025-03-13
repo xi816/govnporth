@@ -17,41 +17,38 @@ def iota(reset=False):
   return result;
 
 ISSPACE   = " \0\n\t";
+LETTERS   = "abcdefghijklmnopqrstuvwxyz";
+DIGITS    = "0123456789";
 
 OP_PUSH   = iota(1);
 OP_PLUS   = iota();
 OP_MINUS  = iota();
 OP_DUMP   = iota();
+OP_IF     = iota();
+OP_END    = iota();
 COUNT_OPS = iota();
 
 push  = lambda x: (OP_PUSH, x);
 plus  = lambda:   (OP_PLUS,);
 minus = lambda:   (OP_MINUS,);
 dump  = lambda:   (OP_DUMP,);
+iff   = lambda:   (OP_IF,);
+end   = lambda:   (OP_END,);
+def kw(w: str):
+  match (w):
+    case "if":
+      return iff();
+    case "end":
+      return end();
+    case _:
+      print("kasm: error: unknown keyword `%s`" % w);
+      exit(1);
 
 def read_word(src, pos, row, column):
   while (src[pos] not in ISSPACE):
     pos += 1;
     row += 1;
   return pos, row, column;
-
-def lex_word(src, pos, row, column):
-  if (src[pos].isdigit()):
-    newpos, row, column = read_word(src, pos, row, column);
-    return newpos, row, column, push(int(src[pos:newpos]));
-  elif (src[pos] == "+"):
-    return pos+1, row, column, plus();
-  elif (src[pos] == "-"):
-    return pos+1, row, column, minus();
-  elif (src[pos] == "."):
-    return pos+1, row, column, dump();
-  elif (src[pos] in ISSPACE):
-    while ((pos < len(src)) and (src[pos] in ISSPACE)):
-      pos += 1;
-      row += 1;
-    return pos, row, column, "";
-  else:
-    ass(0, "unknown character found while lexing: %02X (`%c`)" % (ord(src[pos]), src[pos]));
 
 def lex_file(filename):
   try:
@@ -64,9 +61,34 @@ def lex_file(filename):
   row:    int = 1;
   column: int = 1;
   ir:     list = [];
+  buf:    str = "";
   while (pos < srcl):
-    pos, row, column, ir_token = lex_word(src, pos, row, column);
-    if (ir_token): ir.append(ir_token);
+    if (src[pos] == "+"):
+      ir.append(plus());
+      pos += 1;
+    elif (src[pos] == "-"):
+      ir.append(minus());
+      pos += 1;
+    elif (src[pos] == "."):
+      ir.append(dump());
+      pos += 1;
+    elif (src[pos] in DIGITS):
+      while (src[pos] in DIGITS):
+        buf += src[pos];
+        pos += 1;
+      ir.append(push(int(buf)));
+      buf = "";
+    elif (src[pos] in LETTERS):
+      while (src[pos] in LETTERS):
+        buf += src[pos];
+        pos += 1;
+      ir.append(kw(buf));
+      buf = "";
+    elif (src[pos] in ISSPACE):
+      pos += 1;
+    else:
+      print("kasm: error: unknown character `%c`" % src[pos]);
+      exit(1);
   return ir;
 
 def simulate_program(program):
@@ -86,9 +108,27 @@ def simulate_program(program):
     elif (op[0] == OP_DUMP):
       a = stack.pop();
       print(a);
+  return;
+
+def resolve_if(program):
+  if_stack: list = [];
+  pos: int = 0;
+  pl:  int = len(program);
+  while (pos < pl):
+    if (program[pos][0] == OP_IF):
+      if_stack.append(pos);
+    elif (program[pos][0] == OP_END):
+      addr: int = if_stack.pop();
+      program[addr] = list(program[addr]);
+      program[addr].append(pos);
+      program[addr] = tuple(program[addr]);
+    pos += 1;
+  return program;
 
 def compile_program(program, out_fp):
-  ass(COUNT_OPS == 4, "exhaustive handling of operations in simulation mode");
+  ass(COUNT_OPS == 6, "exhaustive handling of operations in compilation mode");
+  pos: int = 0;
+  pl:  int = len(program);
   with open(out_fp, "w") as out:
     out.write("jmp _porth_start\n");
     out.write("write:\n");
@@ -126,7 +166,8 @@ def compile_program(program, out_fp):
     out.write("  ret\n");
     out.write("puti_buf: reserve 8 bytes\n");
     out.write("_porth_start:\n");
-    for op in program:
+    while (pos < pl):
+      op = program[pos];
       if (op[0] == OP_PUSH):
         out.write("  ; push %d\n" % op[1]);
         out.write("  push %d\n" % op[1]);
@@ -146,8 +187,17 @@ def compile_program(program, out_fp):
         out.write("  ; dump\n");
         out.write("  pop %ax\n");
         out.write("  call puti\n");
+      elif (op[0] == OP_IF):
+        out.write("  pop %ax\n");
+        out.write("  cmp %ax $00\n");
+        out.write("  jne if_%d\n" % pos);
+        out.write("  jmp end_%d\n" % op[1]);
+        out.write("if_%d:\n" % pos);
+      elif (op[0] == OP_END):
+        out.write("end_%d:\n" % pos);
       else:
         ass(0, "unreachable");
+      pos += 1;
     out.write("  hlt\n");
 
 def main(argc: int, argv: list):
@@ -163,10 +213,12 @@ def main(argc: int, argv: list):
   match subcommand:
     case "-s":
       program = lex_file(infile);
+      program = resolve_if(program);
       print(program);
       simulate_program(program);
     case "-c":
       program = lex_file(infile);
+      program = resolve_if(program);
       print(program);
       compile_program(program, "output.asm");
     case _:

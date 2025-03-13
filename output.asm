@@ -36,26 +36,26 @@ puti_buf: reserve 8 bytes
 _porth_start:
   ; push 34
   push 34
-  ; push 35
-  push 35
-  ; plus
+  ; push 34
+  push 34
+  ; minus
   pop %ax
   pop %bx
-  add %ax %bx
+  sub %bx %ax
   push %ax
+  pop %ax
+  ; MAGIC HAPPENS HERE
+  push %ax
+  push %ax
+  call puti
+  cmp %ax $00
+  jne if_3
+  jmp end_6
+if_3:
+  ; push 100
+  push 100
   ; dump
   pop %ax
   call puti
-  ; push 2
-  push 2
-  ; push 3
-  push 3
-  ; plus
-  pop %ax
-  pop %bx
-  add %ax %bx
-  push %ax
-  ; dump
-  pop %ax
-  call puti
+end_6:
   hlt
