@@ -143,8 +143,8 @@ def compile_program(program, out_fp):
     out.write("  mov %gi puti_buf\n");
     out.write("  add %gi 7\n");
     out.write(".loop:\n");
-    out.write("  div %ax 10 ; Divide and get the remainder into %dx\n");
-    out.write("  add %dx 48 ; Convert to ASCII\n");
+    out.write("  div %ax 10\n");
+    out.write("  add %dx 48\n");
     out.write("  stob %gi %dx\n");
     out.write("  sub %gi 2\n");
     out.write("  cmp %ax $00\n");
@@ -182,7 +182,7 @@ def compile_program(program, out_fp):
         out.write("  pop %ax\n");
         out.write("  pop %bx\n");
         out.write("  sub %bx %ax\n");
-        out.write("  push %ax\n");
+        out.write("  push %bx\n");
       elif (op[0] == OP_DUMP):
         out.write("  ; dump\n");
         out.write("  pop %ax\n");

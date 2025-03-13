@@ -11,8 +11,8 @@ puti:
   mov %gi puti_buf
   add %gi 7
 .loop:
-  div %ax 10 ; Divide and get the remainder into %dx
-  add %dx 48 ; Convert to ASCII
+  div %ax 10
+  add %dx 48
   stob %gi %dx
   sub %gi 2
   cmp %ax $00
@@ -36,18 +36,14 @@ puti_buf: reserve 8 bytes
 _porth_start:
   ; push 34
   push 34
-  ; push 34
-  push 34
+  ; push 33
+  push 33
   ; minus
   pop %ax
   pop %bx
   sub %bx %ax
-  push %ax
+  push %bx
   pop %ax
-  ; MAGIC HAPPENS HERE
-  push %ax
-  push %ax
-  call puti
   cmp %ax $00
   jne if_3
   jmp end_6
