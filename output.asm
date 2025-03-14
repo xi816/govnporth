@@ -33,25 +33,27 @@ puti_clr:
   loop .loop
   ret
 puti_buf: reserve 8 bytes
+puts:
+  pop %ax
+  pop %si
+  push %ax
+.loop:
+  lodb %si %ax
+  cmp %ax $00 
+  re
+  push %ax
+  int 2
+  jmp .loop
 _porth_start:
-  ; push 34
-  push 34
-  ; push 33
-  push 33
-  ; minus
-  pop %ax
-  pop %bx
-  sub %bx %ax
-  push %bx
-  pop %ax
-  cmp %ax $00
-  jne if_3
-  jmp end_6
-if_3:
-  ; push 100
-  push 100
-  ; dump
-  pop %ax
-  call puti
-end_6:
+  push str_0000
+  call puts
+  push str_0001
+  call puts
+  push str_0002
+  call puts
   hlt
+str_0000: bytes $48 $65 $6C $6C $6F $2C $20 $57 $6F $72 $6C $64 $21 $A $0
+
+str_0001: bytes $48 $65 $6C $6C $6F $2C $20 $47 $6F $76 $6E $50 $6F $72 $74 $68 $21 $A $0
+
+str_0002: bytes $42 $79 $65 $2E $A $0

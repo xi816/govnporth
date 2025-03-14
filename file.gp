@@ -1,3 +1,4 @@
-34 33 - if
-  100 .
-end
+"Hello, World!\n" puts
+"Hello, GovnPorth!\n" puts
+
+"Bye.\n" puts

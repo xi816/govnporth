@@ -23,17 +23,23 @@ DIGITS    = "0123456789";
 OP_PUSH   = iota(1);
 OP_PLUS   = iota();
 OP_MINUS  = iota();
+OP_MULT   = iota();
 OP_DUMP   = iota();
 OP_IF     = iota();
 OP_END    = iota();
+OP_STR    = iota();
+OP_ID     = iota();
 COUNT_OPS = iota();
 
 push  = lambda x: (OP_PUSH, x);
 plus  = lambda:   (OP_PLUS,);
 minus = lambda:   (OP_MINUS,);
+mult  = lambda:   (OP_MULT,);
 dump  = lambda:   (OP_DUMP,);
 iff   = lambda:   (OP_IF,);
 end   = lambda:   (OP_END,);
+pushs = lambda x: (OP_STR, x);
+id    = lambda x: (OP_ID, x);
 def kw(w: str):
   match (w):
     case "if":
@@ -41,14 +47,9 @@ def kw(w: str):
     case "end":
       return end();
     case _:
-      print("govnporth: error: unknown keyword `%s`" % w);
-      exit(1);
-
-def read_word(src, pos, row, column):
-  while (src[pos] not in ISSPACE):
-    pos += 1;
-    row += 1;
-  return pos, row, column;
+      return id(w);
+      # print("govnporth: error: unknown keyword `%s`" % w);
+      # exit(1);
 
 def lex_file(filename):
   try:
@@ -69,9 +70,24 @@ def lex_file(filename):
     elif (src[pos] == "-"):
       ir.append(minus());
       pos += 1;
+    elif (src[pos] == "*"):
+      ir.append(mult());
+      pos += 1;
     elif (src[pos] == "."):
       ir.append(dump());
       pos += 1;
+    elif (src[pos] == "\""):
+      pos += 1;
+      while (src[pos] != "\""):
+        if ((src[pos] == "\\") and (src[pos+1] == "n")):
+          pos += 2;
+          buf += "\n";
+        else:
+          buf += src[pos];
+          pos += 1;
+      ir.append(pushs(buf));
+      pos += 1;
+      buf = "";
     elif (src[pos] in DIGITS):
       while (src[pos] in DIGITS):
         buf += src[pos];
@@ -110,6 +126,12 @@ def simulate_program(program):
       print(a);
   return;
 
+def asbytes(s: str) -> str:
+  res = "";
+  for i in s:
+    res += " $"+hex(ord(i))[2:].upper();
+  return res;
+
 def resolve_if(program):
   if_stack: list = [];
   pos: int = 0;
@@ -126,9 +148,11 @@ def resolve_if(program):
   return program;
 
 def compile_program(program, out_fp):
-  ass(COUNT_OPS == 6, "exhaustive handling of operations in compilation mode");
-  pos: int = 0;
-  pl:  int = len(program);
+  ass(COUNT_OPS == 9, "exhaustive handling of operations in compilation mode");
+  pos:   int  = 0;
+  pl:    int  = len(program);
+  strs:  list = [];
+  procs: list = ["puts"];
   with open(out_fp, "w") as out:
     out.write("jmp _porth_start\n");
     out.write("write:\n");
@@ -165,6 +189,17 @@ def compile_program(program, out_fp):
     out.write("  loop .loop\n");
     out.write("  ret\n");
     out.write("puti_buf: reserve 8 bytes\n");
+    out.write("puts:\n");
+    out.write("  pop %ax\n");
+    out.write("  pop %si\n");
+    out.write("  push %ax\n");
+    out.write(".loop:\n");
+    out.write("  lodb %si %ax\n");
+    out.write("  cmp %ax $00 \n");
+    out.write("  re\n");
+    out.write("  push %ax\n");
+    out.write("  int 2\n");
+    out.write("  jmp .loop\n");
     out.write("_porth_start:\n");
     while (pos < pl):
       op = program[pos];
@@ -183,6 +218,12 @@ def compile_program(program, out_fp):
         out.write("  pop %bx\n");
         out.write("  sub %bx %ax\n");
         out.write("  push %bx\n");
+      elif (op[0] == OP_MULT):
+        out.write("  ; minus\n");
+        out.write("  pop %ax\n");
+        out.write("  pop %bx\n");
+        out.write("  mul %ax %bx\n");
+        out.write("  push %ax\n");
       elif (op[0] == OP_DUMP):
         out.write("  ; dump\n");
         out.write("  pop %ax\n");
@@ -195,10 +236,19 @@ def compile_program(program, out_fp):
         out.write("if_%d:\n" % pos);
       elif (op[0] == OP_END):
         out.write("end_%d:\n" % pos);
+      elif (op[0] == OP_STR):
+        out.write("  push str_%04X\n" % len(strs));
+        strs.append("str_%04X: bytes%s\n" % (len(strs), asbytes(op[1]+"\0")));
+      elif (op[0] == OP_ID):
+        if (op[1] in procs): out.write("  call %s\n" % op[1]);
+        else:
+          out.write("mov %%si %s\n" % op[1]);
+          out.write("push %si\n");
       else:
         ass(0, "unreachable");
       pos += 1;
     out.write("  hlt\n");
+    out.write("\n".join(strs));
 
 def main(argc: int, argv: list):
   if (argc < 3):
