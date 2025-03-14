@@ -41,7 +41,7 @@ def kw(w: str):
     case "end":
       return end();
     case _:
-      print("kasm: error: unknown keyword `%s`" % w);
+      print("govnporth: error: unknown keyword `%s`" % w);
       exit(1);
 
 def read_word(src, pos, row, column):
