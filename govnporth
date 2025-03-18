@@ -26,8 +26,11 @@ OP_MINUS  = iota();
 OP_MULT   = iota();
 OP_DUMP   = iota();
 OP_IF     = iota();
+OP_WHILE  = iota();
 OP_END    = iota();
+OP_WEND   = iota();
 OP_STR    = iota();
+OP_DUP    = iota();
 OP_ID     = iota();
 COUNT_OPS = iota();
 
@@ -38,7 +41,10 @@ mult  = lambda:   (OP_MULT,);
 dump  = lambda:   (OP_DUMP,);
 iff   = lambda:   (OP_IF,);
 end   = lambda:   (OP_END,);
+whil  = lambda:   (OP_WHILE,);
+wend  = lambda:   (OP_WEND,);
 pushs = lambda x: (OP_STR, x);
+dup   = lambda:   (OP_DUP,);
 id    = lambda x: (OP_ID, x);
 def kw(w: str):
   match (w):
@@ -46,10 +52,14 @@ def kw(w: str):
       return iff();
     case "end":
       return end();
+    case "while":
+      return whil();
+    case "wend":
+      return wend();
+    case "dup":
+      return dup();
     case _:
       return id(w);
-      # print("govnporth: error: unknown keyword `%s`" % w);
-      # exit(1);
 
 def lex_file(filename):
   try:
@@ -107,48 +117,42 @@ def lex_file(filename):
       exit(1);
   return ir;
 
-def simulate_program(program):
-  stack = [];
-  ass(COUNT_OPS == 4, "exhaustive handling of operations in simulation mode");
-  for op in program:
-    if (op[0] == OP_PUSH):
-      stack.append(op[1]);
-    elif (op[0] == OP_PLUS):
-      a = stack.pop();
-      b = stack.pop();
-      stack.append(a + b);
-    elif (op[0] == OP_MINUS):
-      a = stack.pop();
-      b = stack.pop();
-      stack.append(b - a);
-    elif (op[0] == OP_DUMP):
-      a = stack.pop();
-      print(a);
-  return;
-
 def asbytes(s: str) -> str:
   res = "";
   for i in s:
     res += " $"+hex(ord(i))[2:].upper();
   return res;
 
-def resolve_if(program):
+def resolve_end(program):
   if_stack: list = [];
   pos: int = 0;
   pl:  int = len(program);
   while (pos < pl):
     if (program[pos][0] == OP_IF):
       if_stack.append(pos);
+    if (program[pos][0] == OP_WHILE):
+      if_stack.append(pos);
     elif (program[pos][0] == OP_END):
       addr: int = if_stack.pop();
+      ass(program[addr][0] == OP_IF, "`end` can't close while loops");
       program[addr] = list(program[addr]);
       program[addr].append(pos);
       program[addr] = tuple(program[addr]);
+    elif (program[pos][0] == OP_WEND):
+      addr: int = if_stack.pop();
+      ass(program[addr][0] == OP_WHILE, "`wend` can't close if statements");
+      program[addr] = list(program[addr]);
+      program[addr].append(pos);
+      program[addr] = tuple(program[addr]);
+
+      program[pos] = list(program[pos]);
+      program[pos].append(addr);
+      program[pos] = tuple(program[pos]);
     pos += 1;
   return program;
 
 def compile_program(program, out_fp):
-  ass(COUNT_OPS == 9, "exhaustive handling of operations in compilation mode");
+  ass(COUNT_OPS == 12, "exhaustive handling of operations in compilation mode");
   pos:   int  = 0;
   pl:    int  = len(program);
   strs:  list = [];
@@ -228,14 +232,32 @@ def compile_program(program, out_fp):
         out.write("  ; dump\n");
         out.write("  pop %ax\n");
         out.write("  call puti\n");
+      elif (op[0] == OP_DUP):
+        out.write("  ; dup\n");
+        out.write("  pop %ax\n");
+        out.write("  push %ax\n");
+        out.write("  push %ax\n");
       elif (op[0] == OP_IF):
         out.write("  pop %ax\n");
         out.write("  cmp %ax $00\n");
         out.write("  jne if_%d\n" % pos);
         out.write("  jmp end_%d\n" % op[1]);
         out.write("if_%d:\n" % pos);
+      elif (op[0] == OP_WHILE):
+        out.write("  pop %ax\n");
+        out.write("  cmp %ax $00\n");
+        out.write("  jne while_%d\n" % pos);
+        out.write("  jmp wend_%d\n" % op[1]);
+        out.write("while_%d:\n" % pos);
       elif (op[0] == OP_END):
         out.write("end_%d:\n" % pos);
+      elif (op[0] == OP_WEND):
+        out.write("wend_%d:\n" % pos);
+        out.write("  pop %ax\n");
+        out.write("  push %ax\n");
+        out.write("  push %ax\n");
+        out.write("  cmp %ax $00\n");
+        out.write("  jne while_%d\n" % op[1]);
       elif (op[0] == OP_STR):
         out.write("  push str_%04X\n" % len(strs));
         strs.append("str_%04X: bytes%s\n" % (len(strs), asbytes(op[1]+"\0")));
@@ -252,27 +274,14 @@ def compile_program(program, out_fp):
 
 def main(argc: int, argv: list):
   if (argc < 3):
-    print("Usage: govnporth <SUBCOMMAND> <FILE>");
-    print("Subcommands:");
-    print("  -s      Simulate the program");
-    print("  -c      Compile the program");
-    print("ERROR: no subcommand/filename is provided");
+    print("Usage: govnporth <FILE> <OUTPUT>");
     return 1;
-  subcommand = argv[1];
-  infile = argv[2];
-  match subcommand:
-    case "-s":
-      program = lex_file(infile);
-      program = resolve_if(program);
-      print(program);
-      simulate_program(program);
-    case "-c":
-      program = lex_file(infile);
-      program = resolve_if(program);
-      print(program);
-      compile_program(program, "output.asm");
-    case _:
-      ass(0, f"unknown subcommand {subcommand}");
+  infile = argv[1];
+  outfile = argv[2];
+  program = lex_file(infile);
+  program = resolve_end(program);
+  print(program);
+  compile_program(program, outfile);
 
   return 0;
 
