@@ -4,7 +4,7 @@ It's like Porth but compiled to GovnASM. But I don't actually know since I never
 
 ## Usage
 
-$ govnporth <FILE> <OUTPUT>
+$ govnporth < FILE > < OUTPUT >
 
 #### Ex.:
 
