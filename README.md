@@ -6,4 +6,4 @@ It's like Porth but compiled to GovnASM. But I don't actually know since I never
 
 ``` $ govnporth < FILE > < OUTPUT > ```
 
-#### Ex.: ``` $ govnporth main.gp main.asm ```
+Ex.: ``` $ govnporth main.gp main.asm ```
