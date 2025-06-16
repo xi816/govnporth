@@ -1445,7 +1445,7 @@ memory silent sizeof(bool) end
 inline proc located-here ptr in eputloc ": NOTE: located here\n" eputs end
 
 // TODOO: an option to detect stack overflow at runtime
-const X86_64_RET_STACK_CAP 64 1024 * end
+const GOVNOCORE_RET_STACK_CAP 2048 end
 
 /// BEGIN Code Generator //////////////////////////////
 proc bputdecstr
@@ -1456,7 +1456,7 @@ in
     true n s
     while over 0 > do
       let first n s in
-        first lnot if "," bfd bputs end
+        first lnot if " " bfd bputs end
         s @8 bfd bputu
 
         false
@@ -1472,39 +1472,40 @@ proc generate-print-intel-linux-x86_64
   ptr // bfd
 in
   let bfd in
-    "print:\n"                               bfd bputs
-    "    mov     r9, -3689348814741910323\n" bfd bputs
-    "    sub     rsp, 40\n"                  bfd bputs
-    "    mov     BYTE [rsp+31], 10\n"        bfd bputs
-    "    lea     rcx, [rsp+30]\n"            bfd bputs
-    ".L2:\n"                                 bfd bputs
-    "    mov     rax, rdi\n"                 bfd bputs
-    "    lea     r8, [rsp+32]\n"             bfd bputs
-    "    mul     r9\n"                       bfd bputs
-    "    mov     rax, rdi\n"                 bfd bputs
-    "    sub     r8, rcx\n"                  bfd bputs
-    "    shr     rdx, 3\n"                   bfd bputs
-    "    lea     rsi, [rdx+rdx*4]\n"         bfd bputs
-    "    add     rsi, rsi\n"                 bfd bputs
-    "    sub     rax, rsi\n"                 bfd bputs
-    "    add     eax, 48\n"                  bfd bputs
-    "    mov     BYTE [rcx], al\n"           bfd bputs
-    "    mov     rax, rdi\n"                 bfd bputs
-    "    mov     rdi, rdx\n"                 bfd bputs
-    "    mov     rdx, rcx\n"                 bfd bputs
-    "    sub     rcx, 1\n"                   bfd bputs
-    "    cmp     rax, 9\n"                   bfd bputs
-    "    ja      .L2\n"                      bfd bputs
-    "    lea     rax, [rsp+32]\n"            bfd bputs
-    "    mov     edi, 1\n"                   bfd bputs
-    "    sub     rdx, rax\n"                 bfd bputs
-    "    xor     eax, eax\n"                 bfd bputs
-    "    lea     rsi, [rsp+32+rdx]\n"        bfd bputs
-    "    mov     rdx, r8\n"                  bfd bputs
-    "    mov     rax, 1\n"                   bfd bputs
-    "    syscall\n"                          bfd bputs
-    "    add     rsp, 40\n"                  bfd bputs
-    "    ret\n"                              bfd bputs
+    "___write:\n"                      bfd bputs
+    "  psh %eax\n"                     bfd bputs
+    "  dex %ecx\n"                     bfd bputs
+    ".lp:\n"                           bfd bputs
+    "  lb %esi %eax\n"                 bfd bputs
+    "  psh %eax\n"                     bfd bputs
+    "  int $02\n"                      bfd bputs
+    "  lp .lp\n"                       bfd bputs
+    "  pop %eax\n"                     bfd bputs
+    "  rts\n"                          bfd bputs
+    "print:\n"                         bfd bputs
+    "  mov %egi ___print_buf\n"        bfd bputs
+    "  add %egi 10\n"                  bfd bputs
+    ".lp:\n"                           bfd bputs
+    "  div %eax 10\n"                  bfd bputs
+    "  add %edx 48\n"                  bfd bputs
+    "  sb %egi %edx\n"                 bfd bputs
+    "  sub %egi 2\n"                   bfd bputs
+    "  cmp %eax $00\n"                 bfd bputs
+    "  jne .lp\n"                      bfd bputs
+    "  mov %esi ___print_buf\n"        bfd bputs
+    "  mov %ecx 11\n"                  bfd bputs
+    "  jsr ___write\n"                 bfd bputs
+    "  jsr ___print_clr\n"             bfd bputs
+    "  rts\n"                          bfd bputs
+    "___print_clr:\n"                  bfd bputs
+    "  mov %esi ___print_buf\n"        bfd bputs
+    "  mov %eax $00\n"                 bfd bputs
+    "  mov %ecx 10\n"                  bfd bputs
+    ".lp:\n"                           bfd bputs
+    "  sb %esi %eax\n"                 bfd bputs
+    "  lp .lp\n"                       bfd bputs
+    "  rts\n"                          bfd bputs
+    "___print_buf: reserve 11 bytes\n" bfd bputs
   end
 end
 
@@ -1547,54 +1548,63 @@ in
       let type operand in
         assert "Exhaustive handling of Op types in generate-op-intel-linux-x86_64" COUNT_OPS 25 = end
         type OP_PUSH_INT = if
-           "    mov rax, "   bfd bputs operand bfd bputu "\n" bfd bputs
-           "    push rax\n"  bfd bputs
+          "  mov %eax "   bfd bputs operand bfd bputu "\n" bfd bputs
+          "  psh %eax\n"  bfd bputs
         else type OP_PUSH_BOOL = if*
-           "    mov rax, "   bfd bputs operand bfd bputu "\n" bfd bputs
-           "    push rax\n"  bfd bputs
+          "  mov %eax "   bfd bputs operand bfd bputu "\n" bfd bputs
+          "  psh %eax\n"  bfd bputs
         else type OP_PUSH_PTR = if*
-           "    mov rax, "   bfd bputs operand bfd bputu "\n" bfd bputs
-           "    push rax\n"  bfd bputs
+          "  mov %eax "   bfd bputs operand bfd bputu "\n" bfd bputs
+          "  psh %eax\n"  bfd bputs
         else type OP_PUSH_ADDR = if*
-           "    mov rax, addr_" bfd bputs operand bfd bputu "\n" bfd bputs
-           "    push rax\n"     bfd bputs
+          "  mov %eax addr_" bfd bputs operand bfd bputu "\n" bfd bputs
+          "  psh %eax\n"     bfd bputs
         else type OP_CALL_LIKE = if*
-           "    pop rbx\n"                  bfd bputs
-           "    mov rax, rsp\n"             bfd bputs
-           "    mov rsp, [ret_stack_rsp]\n" bfd bputs
-           "    call rbx\n"                 bfd bputs
-           "    mov [ret_stack_rsp], rsp\n" bfd bputs
-           "    mov rsp, rax\n"             bfd bputs
+          "  pop %ebx\n"                  bfd bputs
+          "  mov %eax %esp\n"             bfd bputs
+          "  mov %e8 ret_stack_rsp\n"     bfd bputs
+          "  ld %e8 %esp\n"             bfd bputs
+          "  call %ebx\n"                 bfd bputs
+          "  mov %e8 ret_stack_rsp\n"     bfd bputs
+          "  sd %e8 %esp\n"             bfd bputs
+          "  mov %esp %eax\n"             bfd bputs
         else type OP_BIND_LET = if*
-          "    mov rax, [ret_stack_rsp]\n"  bfd bputs
-          "    sub rax, "                   bfd bputs
-          operand 8 *       bfd bputu
+          "  mov %e8 ret_stack_rsp\n"     bfd bputs
+          "  ld %e8 %eax\n"             bfd bputs
+          "  sub %eax "                  bfd bputs
+          operand 4 *                     bfd bputu
           "\n"                              bfd bputs
-          "    mov [ret_stack_rsp], rax\n"  bfd bputs
+          "  mov %e8 ret_stack_rsp\n"     bfd bputs
+          "  sd %e8 %eax\n"             bfd bputs
           operand
           while dup 0 > do
-            "    pop rbx\n" bfd bputs
-            "    mov [rax+" bfd bputs mov [rax+6], rbx
-            dup 1 - 8 *     bfd bputu
-            "], rbx\n"      bfd bputs
+            "    pop %ebx\n"     bfd bputs
+            "    add %eax"       bfd bputs
+            dup 1 - 4 *          bfd bputu
+            "\n  sd %eax %ebx" bfd bputs
+            "\n  add %eax"       bfd bputs
+            dup     4 *          bfd bputu
+            "\n"                 bfd bputs
             1 -
           end drop
         else type OP_BIND_PEEK = if*
-          "    mov rax, [ret_stack_rsp]\n"  bfd bputs
-          "    sub rax, "                   bfd bputs operand 8 * bfd bputu "\n" bfd bputs
-          "    mov [ret_stack_rsp], rax\n"  bfd bputs
+          "    mov %e8 ret_stack_rsp\n"     bfd bputs
+          "    mov %e8 %eax\n"              bfd bputs
+          "    sub rax "                    bfd bputs operand 4 * bfd bputu "\n" bfd bputs
+          "    mov %e8 ret_stack_rsp\n"     bfd bputs
+          "    sd %e8 %eax\n"  bfd bputs
 
           0
           operand
           while over over < do
             let i n in
-              "    mov rbx, [rsp+" bfd bputs
-              i 8 *                bfd bputu
-              "]\n"                bfd bputs
+              "    mov %e8 %esp\n  add %e8 " bfd bputs
+              i 4 *                          bfd bputu
+              "ld %e8 %ebx\n"              bfd bputs
 
-              "    mov [rax+"      bfd bputs
-              n i - 1 - 8 *        bfd bputu
-              "], rbx\n"           bfd bputs
+              "    mov %e8 %eax\n  add %e8 " bfd bputs
+              n i - 1 - 4 *                  bfd bputu
+              "sd %e8 %ebx\n"              bfd bputs
 
               i 1 +
               n
@@ -1603,27 +1613,27 @@ in
           drop
           drop
         else type OP_UNBIND = if*
-          "    mov rax, [ret_stack_rsp]\n"  bfd bputs
-          "    add rax, "                   bfd bputs
+          "  mov rax [ret_stack_rsp]\n"  bfd bputs
+          "  add rax "                   bfd bputs
           operand 8 *       bfd bputu
           "\n"                              bfd bputs
-          "    mov [ret_stack_rsp], rax\n"  bfd bputs
+          "  mov [ret_stack_rsp], rax\n"  bfd bputs
         else type OP_PUSH_BIND = if*
-           "    mov rax, [ret_stack_rsp]\n" bfd bputs
-           "    add rax, "                  bfd bputs
+           "  mov rax [ret_stack_rsp]\n" bfd bputs
+           "  add rax "                  bfd bputs
            operand 8 *      bfd bputu
            "\n"                             bfd bputs
-           "    push QWORD [rax]\n"         bfd bputs
+           "  psh QWORD [rax]\n"         bfd bputs
         else type OP_PUSH_LOCAL_MEM = if*
-           "    mov rax, [ret_stack_rsp]\n" bfd bputs
-           "    add rax, "                  bfd bputs
+           "  mov rax [ret_stack_rsp]\n" bfd bputs
+           "  add rax "                  bfd bputs
            operand          bfd bputu
            "\n"                             bfd bputs
-           "    push rax\n"                 bfd bputs
+           "  push rax\n"                 bfd bputs
         else type OP_PUSH_GLOBAL_MEM = if*
-           "    push mem+" bfd bputs operand bfd bputu "\n" bfd bputs
+           "  mov %e8 mem\n  add %e8 " bfd bputs operand bfd bputu "\n  push %e8\n" bfd bputs
         else type OP_PUSH_STR = if*
-           "    mov rax, " bfd bputs
+           "  mov %eax " bfd bputs
              operand
              sizeof(Str) *
              strlits +ptr
@@ -1631,55 +1641,56 @@ in
              bfd bputu
            "\n" bfd bputs
 
-           "    push rax\n"     bfd bputs
-           "    push str_"      bfd bputs
+           "  psh %eax\n"     bfd bputs
+           "  psh str_"      bfd bputs
            operand bfd bputu
            "\n"                 bfd bputs
         else type OP_PUSH_CSTR = if*
-           "    push str_"      bfd bputs
+           "  psh str_"      bfd bputs
            operand bfd bputu
            "\n"                 bfd bputs
         else type OP_IF = if*
-           "    pop rax\n"       bfd bputs
-           "    test rax, rax\n" bfd bputs
-           "    jz addr_"        bfd bputs ip operand + bfd bputu "\n" bfd bputs
+           "  pop rax\n"       bfd bputs
+           "  test rax rax\n" bfd bputs
+           "  jz addr_"        bfd bputs ip operand + bfd bputu "\n" bfd bputs
         else type OP_IFSTAR = if*
-           "    pop rax\n"       bfd bputs
-           "    test rax, rax\n" bfd bputs
-           "    jz addr_"        bfd bputs ip operand + bfd bputu "\n" bfd bputs
+           "  pop rax\n"       bfd bputs
+           "  test rax rax\n" bfd bputs
+           "  jz addr_"        bfd bputs ip operand + bfd bputu "\n" bfd bputs
         else type OP_ELSE = if*
-           "    jmp addr_"       bfd bputs ip operand + bfd bputu "\n" bfd bputs
+           "  jmp addr_"       bfd bputs ip operand + bfd bputu "\n" bfd bputs
         else type OP_END_WHILE = if*
-           "    jmp addr_"       bfd bputs ip operand - bfd bputu "\n" bfd bputs
+           "  jmp addr_"       bfd bputs ip operand - bfd bputu "\n" bfd bputs
         else type OP_END_IF = if*
            // NOTE: nothing to generate for x86_64
         else type OP_WHILE = if*
            // NOTE: nothing to generate. `while` is basically a label
         else type OP_DO = if*
-           "    pop rax\n"       bfd bputs
-           "    test rax, rax\n" bfd bputs
-           "    jz addr_"        bfd bputs ip operand + bfd bputu "\n" bfd bputs
+           "  pop rax\n"       bfd bputs
+           "  test rax rax\n" bfd bputs
+           "  jz addr_"        bfd bputs ip operand + bfd bputu "\n" bfd bputs
         else type OP_PREP_PROC = if*
-           "    sub rsp, "                  bfd bputs
+           "  sub %esp "                    bfd bputs
            operand                          bfd bputu
            "\n"                             bfd bputs
 
-           "    mov [ret_stack_rsp], rsp\n" bfd bputs
-           "    mov rsp, rax\n"             bfd bputs
+           "  mov %e8 ret_stack_rsp\n  sd %e8 %esp\n" bfd bputs
+           "  mov %esp %eax\n"             bfd bputs
         else type OP_RET = if*
-           "    mov rax, rsp\n"             bfd bputs
-           "    mov rsp, [ret_stack_rsp]\n" bfd bputs
-           "    add rsp, "                  bfd bputs
-           operand             bfd bputu
-           "\n    ret\n"                      bfd bputs
-        else type OP_CALL = if*
-           "    mov rax, rsp\n"             bfd bputs
-           "    mov rsp, [ret_stack_rsp]\n" bfd bputs
-           "    call addr_"                 bfd bputs
+           "  mov %eax %esp\n"             bfd bputs
+           "  mov %e8 ret_stack_rsp\n  ld %e8 %esp\n" bfd bputs
+           "  add %esp "                  bfd bputs
            operand             bfd bputu
            "\n"                             bfd bputs
-           "    mov [ret_stack_rsp], rsp\n" bfd bputs
-           "    mov rsp, rax\n"             bfd bputs
+           "  rts\n"                      bfd bputs
+        else type OP_CALL = if*
+           "  mov %eax %esp\n"             bfd bputs
+           "  mov %e8 ret_stack_rsp\n  ld %e8 %esp\n" bfd bputs
+           "  call addr_"                 bfd bputs
+           operand             bfd bputu
+           "\n"                             bfd bputs
+           "  mov %e8 ret_stack_rsp\n  sd %e8 %esp\n" bfd bputs
+           "  mov %esp %eax\n"             bfd bputs
         else type OP_INLINED = if*
            // ignored
         else type OP_INTRINSIC = if*
@@ -1688,190 +1699,184 @@ in
             end
 
             operand INTRINSIC_PLUS = if
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    add rax, rbx\n"        bfd bputs
-                "    push rax\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  add %eax %ebx\n"        bfd bputs
+                "  psh %eax\n"            bfd bputs
             else operand INTRINSIC_MINUS = if*
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    sub rbx, rax\n"        bfd bputs
-                "    push rbx\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  sub %eax %ebx\n"        bfd bputs
+                "  psh %eax\n"            bfd bputs
             else operand INTRINSIC_MUL = if*
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    mul rbx\n"             bfd bputs
-                "    push rax\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  mul %eax %ebx\n"        bfd bputs
+                "  psh %eax\n"            bfd bputs
             else operand INTRINSIC_DIVMOD = if*
-                "    xor rdx, rdx\n"        bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    pop rax\n"             bfd bputs
-                "    div rbx\n"             bfd bputs
-                "    push rax\n"            bfd bputs
-                "    push rdx\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  div %eax %ebx\n"        bfd bputs
+                "  push %eax\n"            bfd bputs
+                "  psh %edx\n"            bfd bputs
             else operand INTRINSIC_IDIVMOD = if*
-                "    pop rbx\n"             bfd bputs
-                "    pop rax\n"             bfd bputs
-                "    cqo\n"                 bfd bputs
-                "    idiv rbx\n"            bfd bputs
-                "    push rax\n"            bfd bputs
-                "    push rdx\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  div %eax %ebx\n"        bfd bputs
+                "  push %eax\n"            bfd bputs
+                "  psh %edx\n"            bfd bputs
             else operand INTRINSIC_MAX = if*
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    cmp rbx, rax\n"        bfd bputs
-                "    cmovge rax, rbx\n"     bfd bputs
-                "    push rax\n"            bfd bputs
+                "  pop rax\n"             bfd bputs
+                "  pop rbx\n"             bfd bputs
+                "  cmp rbx rax\n"        bfd bputs
+                "  cmovge rax rbx\n"     bfd bputs
+                "  psh rax\n"            bfd bputs
             else operand INTRINSIC_SHR = if*
                 "    pop rcx\n"             bfd bputs
                 "    pop rbx\n"             bfd bputs
-                "    shr rbx, cl\n"         bfd bputs
+                "    shr rbx cl\n"         bfd bputs
                 "    push rbx\n"            bfd bputs
             else operand INTRINSIC_SHL = if*
                 "    pop rcx\n"             bfd bputs
                 "    pop rbx\n"             bfd bputs
-                "    shl rbx, cl\n"         bfd bputs
+                "    shl rbx cl\n"         bfd bputs
                 "    push rbx\n"            bfd bputs
             else operand INTRINSIC_OR = if*
                 "    pop rax\n"             bfd bputs
                 "    pop rbx\n"             bfd bputs
-                "    or rbx, rax\n"         bfd bputs
+                "    or rbx rax\n"         bfd bputs
                 "    push rbx\n"            bfd bputs
             else operand INTRINSIC_AND = if*
                 "    pop rax\n"             bfd bputs
                 "    pop rbx\n"             bfd bputs
-                "    and rbx, rax\n"        bfd bputs
+                "    and rbx rax\n"        bfd bputs
                 "    push rbx\n"            bfd bputs
             else operand INTRINSIC_NOT = if*
                 "    pop rax\n"             bfd bputs
                 "    not rax\n"             bfd bputs
                 "    push rax\n"            bfd bputs
             else operand INTRINSIC_PRINT = if*
-                "    pop rdi\n"             bfd bputs
-                "    call print\n"          bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  jsr print\n"          bfd bputs
             else operand INTRINSIC_EQ = if*
-                "    mov rcx, 0\n"          bfd bputs
-                "    mov rdx, 1\n"          bfd bputs
+                "    mov rcx 0\n"          bfd bputs
+                "    mov rdx 1\n"          bfd bputs
                 "    pop rax\n"             bfd bputs
                 "    pop rbx\n"             bfd bputs
-                "    cmp rax, rbx\n"        bfd bputs
-                "    cmove rcx, rdx\n"      bfd bputs
+                "    cmp rax rbx\n"        bfd bputs
+                "    cmove rcx rdx\n"      bfd bputs
                 "    push rcx\n"            bfd bputs
             else operand INTRINSIC_GT = if*
-                "    mov rcx, 0\n"          bfd bputs
-                "    mov rdx, 1\n"          bfd bputs
+                "    mov rcx 0\n"          bfd bputs
+                "    mov rdx 1\n"          bfd bputs
                 "    pop rbx\n"             bfd bputs
                 "    pop rax\n"             bfd bputs
-                "    cmp rax, rbx\n"        bfd bputs
-                "    cmovg rcx, rdx\n"      bfd bputs
+                "    cmp rax rbx\n"        bfd bputs
+                "    cmovg rcx rdx\n"      bfd bputs
                 "    push rcx\n"            bfd bputs
             else operand INTRINSIC_LT = if*
-                "    mov rcx, 0\n"          bfd bputs
-                "    mov rdx, 1\n"          bfd bputs
+                "    mov rcx 0\n"          bfd bputs
+                "    mov rdx 1\n"          bfd bputs
                 "    pop rbx\n"             bfd bputs
                 "    pop rax\n"             bfd bputs
-                "    cmp rax, rbx\n"        bfd bputs
-                "    cmovl rcx, rdx\n"      bfd bputs
+                "    cmp rax rbx\n"        bfd bputs
+                "    cmovl rcx rdx\n"      bfd bputs
                 "    push rcx\n"            bfd bputs
             else operand INTRINSIC_GE = if*
-                "    mov rcx, 0\n"          bfd bputs
-                "    mov rdx, 1\n"          bfd bputs
+                "    mov rcx 0\n"          bfd bputs
+                "    mov rdx 1\n"          bfd bputs
                 "    pop rbx\n"             bfd bputs
                 "    pop rax\n"             bfd bputs
-                "    cmp rax, rbx\n"        bfd bputs
-                "    cmovge rcx, rdx\n"     bfd bputs
+                "    cmp rax rbx\n"        bfd bputs
+                "    cmovge rcx rdx\n"     bfd bputs
                 "    push rcx\n"            bfd bputs
             else operand INTRINSIC_LE = if*
-                "    mov rcx, 0\n"          bfd bputs
-                "    mov rdx, 1\n"          bfd bputs
+                "    mov rcx 0\n"          bfd bputs
+                "    mov rdx 1\n"          bfd bputs
                 "    pop rbx\n"             bfd bputs
                 "    pop rax\n"             bfd bputs
-                "    cmp rax, rbx\n"        bfd bputs
-                "    cmovle rcx, rdx\n"     bfd bputs
+                "    cmp rax rbx\n"        bfd bputs
+                "    cmovle rcx rdx\n"     bfd bputs
                 "    push rcx\n"            bfd bputs
             else operand INTRINSIC_NE = if*
-                "    mov rcx, 0\n"          bfd bputs
-                "    mov rdx, 1\n"          bfd bputs
+                "    mov rcx 0\n"          bfd bputs
+                "    mov rdx 1\n"          bfd bputs
                 "    pop rbx\n"             bfd bputs
                 "    pop rax\n"             bfd bputs
-                "    cmp rax, rbx\n"        bfd bputs
-                "    cmovne rcx, rdx\n"     bfd bputs
+                "    cmp rax rbx\n"        bfd bputs
+                "    cmovne rcx rdx\n"     bfd bputs
                 "    push rcx\n"            bfd bputs
+
             else operand INTRINSIC_DUP = if*
-                "    pop rax\n"             bfd bputs
-                "    push rax\n"            bfd bputs
-                "    push rax\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  psh %eax\n"            bfd bputs
+                "  psh %eax\n"            bfd bputs
             else operand INTRINSIC_SWAP = if*
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    push rax\n"            bfd bputs
-                "    push rbx\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  psh %eax\n"            bfd bputs
+                "  psh %ebx\n"            bfd bputs
             else operand INTRINSIC_DROP = if*
-                "    pop rax\n"             bfd bputs
+                "  pop %eax\n"             bfd bputs
             else operand INTRINSIC_OVER = if*
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    push rbx\n"            bfd bputs
-                "    push rax\n"            bfd bputs
-                "    push rbx\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  psh %ebx\n"            bfd bputs
+                "  psh %eax\n"            bfd bputs
+                "  psh %ebx\n"            bfd bputs
             else operand INTRINSIC_ROT = if*
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    pop rcx\n"             bfd bputs
-                "    push rbx\n"            bfd bputs
-                "    push rax\n"            bfd bputs
-                "    push rcx\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  pop %ecx\n"             bfd bputs
+                "  psh %ebx\n"            bfd bputs
+                "  psh %eax\n"            bfd bputs
+                "  psh %ecx\n"            bfd bputs
             else operand INTRINSIC_LOAD8 = if*
-                "    pop rax\n"             bfd bputs
-                "    xor rbx rbx\n"        bfd bputs
-                "    mov bl [rax]\n"       bfd bputs
-                "    push rbx\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  xor %ebx %ebx\n"        bfd bputs
+                "  lb %eax %ebx\n"         bfd bputs
+                "  psh %ebx\n"             bfd bputs
             else operand INTRINSIC_STORE8 = if*
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    mov [rax] bl\n"       bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  sb %eax %ebx\n"       bfd bputs
             else operand INTRINSIC_LOAD16 = if*
-                "    pop rax\n"             bfd bputs
-                "    xor rbx rbx\n"        bfd bputs
-                "    mov bx [rax]\n"       bfd bputs
-                "    push rbx\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  xor %ebx, %ebx\n"        bfd bputs
+                "  lw %eax %ebx\n"       bfd bputs
+                "  psh %ebx\n"            bfd bputs
             else operand INTRINSIC_STORE16 = if*
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    mov [rax] bx\n"       bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  sw %eax %ebx\n"       bfd bputs
             else operand INTRINSIC_LOAD32 = if*
-                "    pop rax\n"             bfd bputs
-                "    xor rbx rbx\n"        bfd bputs
-                "    mov ebx [rax]\n"      bfd bputs
-                "    push rbx\n"            bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  xor %ebx %ebx\n"        bfd bputs
+                "  ld %eax %ebx\n"      bfd bputs
+                "  psh %ebx\n"            bfd bputs
             else operand INTRINSIC_STORE32 = if*
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    mov [rax] ebx\n"      bfd bputs
+                "  pop %eax\n"             bfd bputs
+                "  pop %ebx\n"             bfd bputs
+                "  sd %eax %ebx\n"      bfd bputs
             else operand INTRINSIC_LOAD64 = if*
-                "    pop rax\n"             bfd bputs
-                "    xor rbx rbx\n"        bfd bputs
-                "    mov rbx [rax]\n"      bfd bputs
-                "    push rbx\n"            bfd bputs
+              "А нахуй не пойдёшь дорогуша\n" puts 1 exit
             else operand INTRINSIC_STORE64 = if*
-                "    pop rax\n"             bfd bputs
-                "    pop rbx\n"             bfd bputs
-                "    mov [rax] rbx\n"      bfd bputs
+              "А нахуй не пойдёшь дорогуша\n" puts 1 exit
             else operand INTRINSIC_ARGC = if*
-                "    mov rax, [args_ptr]\n" bfd bputs
-                "    mov rax, [rax]\n"      bfd bputs
+                "    mov rax [args_ptr]\n" bfd bputs
+                "    mov rax [rax]\n"      bfd bputs
                 "    push rax\n"            bfd bputs
             else operand INTRINSIC_ARGV = if*
-                "    mov rax, [args_ptr]\n" bfd bputs
-                "    add rax, 8\n"          bfd bputs
+                "    mov rax [args_ptr]\n" bfd bputs
+                "    add rax 8\n"          bfd bputs
                 "    push rax\n"            bfd bputs
             else operand INTRINSIC_ENVP = if*
-                "    mov rax, [args_ptr]\n" bfd bputs
-                "    mov rax, [rax]\n"      bfd bputs
-                "    add rax, 2\n"          bfd bputs
-                "    shl rax, 3\n"          bfd bputs
-                "    mov rbx, [args_ptr]\n" bfd bputs
-                "    add rbx, rax\n"        bfd bputs
+                "    mov rax [args_ptr]\n" bfd bputs
+                "    mov rax [rax]\n"      bfd bputs
+                "    add rax 2\n"          bfd bputs
+                "    shl rax 3\n"          bfd bputs
+                "    mov rbx [args_ptr]\n" bfd bputs
+                "    add rbx rax\n"        bfd bputs
                 "    push rbx\n"            bfd bputs
             else operand INTRINSIC_CAST_PTR = if*
             else operand INTRINSIC_CAST_INT = if*
@@ -1969,8 +1974,8 @@ in
         1 exit
       end
 
-      "format ELF64 executable 3\n"   bfd bputs
-      "segment readable executable\n" bfd bputs
+      "; Generated by govnporth\n"   bfd bputs
+      "jmp start\n"   bfd bputs
       bfd generate-print-intel-linux-x86_64
 
       0 while dup ops-count @64 < do
@@ -1982,11 +1987,10 @@ in
       ops-count @64 bfd bputu
       ":\n"         bfd bputs
 
-      "entry start\n"                  bfd bputs
       "start:\n"                       bfd bputs
-      "    mov [args_ptr], rsp\n"      bfd bputs
-      "    mov rax, ret_stack_end\n"   bfd bputs
-      "    mov [ret_stack_rsp], rax\n" bfd bputs
+      "  mov %e8 args_ptr\n  sd %e8 %esp\n"      bfd bputs
+      "  mov %eax ret_stack_end\n"   bfd bputs
+      "  mov %e8 ret_stack_rsp\n  ld %e8 %eax\n" bfd bputs
 
       "main" proc-lookup-by-name
       let main-proc in
@@ -1995,15 +1999,13 @@ in
           1 exit
         end
 
-        "    call addr_"              bfd bputs
+        "  jsr addr_"              bfd bputs
         main-proc Proc.addr ptr+ @int bfd bputu
         "\n"                          bfd bputs
       end
 
-      "    mov rax, 60\n"           bfd bputs
-      "    mov rdi, 0\n"            bfd bputs
-      "    syscall\n"               bfd bputs
-      "segment readable writable\n" bfd bputs
+      "  hlt\n"               bfd bputs
+      ";; data segment ;;\n" bfd bputs
       0 while dup strlits-count @64 < do
         let i in
           "str_" bfd bputs
@@ -2012,7 +2014,7 @@ in
           i sizeof(Str) * strlits +ptr
           let str in
             str ?str-empty lnot if
-              " db "   bfd bputs
+              " bytes "   bfd bputs
               str @Str bfd bputdecstr
             end
           end
@@ -2021,13 +2023,13 @@ in
         end
       end drop
       // "segment .bss\n"           bfd bputs
-      "args_ptr: rq 1\n"         bfd bputs
-      "ret_stack_rsp: rq 1\n"    bfd bputs
-      "ret_stack: rb "           bfd bputs X86_64_RET_STACK_CAP bfd bputu "\n" bfd bputs
+      "args_ptr: reserve 4 bytes\n"         bfd bputs
+      "ret_stack_rsp: reserve 4 bytes\n"    bfd bputs
+      "ret_stack: reserve "           bfd bputs GOVNOCORE_RET_STACK_CAP bfd bputu " bytes\n" bfd bputs
       "ret_stack_end:\n"         bfd bputs
-      "mem: rb "                 bfd bputs
+      "mem: reserve "                 bfd bputs
       global-memory-capacity @64 bfd bputu
-      "\n"                       bfd bputs
+      " bytes\n"                       bfd bputs
 
       bfd bflush
       fd close drop
@@ -5014,9 +5016,7 @@ proc main in
         silent @bool cmd-dev-null-stdout !bool
         fpb-end
           tmp-end
-          "fasm"c       tmp-append-ptr
-          "-m"c         tmp-append-ptr
-          "524288"c     tmp-append-ptr
+          "kasm"c       tmp-append-ptr
           fpb-end
             base-file-path @Str fpb-append drop
             ".asm"              fpb-append drop
@@ -5024,7 +5024,7 @@ proc main in
             tmp-append-ptr
           fpb-end
             base-file-path @Str fpb-append drop
-            ".tmp"              fpb-append drop
+            ".bin"              fpb-append drop
             1                   fpb-alloc  drop
             tmp-append-ptr
           NULL          tmp-append-ptr
@@ -5032,54 +5032,26 @@ proc main in
         fpb-rewind
       cmd-dev-null-stdout !bool
 
-      fpb-end
-        fpb-end
-          base-file-path @Str fpb-append drop
-          1                   fpb-alloc  drop
-
-        fpb-end
-          base-file-path @Str fpb-append drop
-          ".tmp"              fpb-append drop
-          1                   fpb-alloc  drop
-
-        silent @bool lnot if
-          "[INFO] renaming " puts
-          dup cstr-to-str    puts
-          " -> "             puts
-          over cstr-to-str   puts
-          "\n"               puts
-        end
-
-        rename 0 < if
-          "ERROR: could not rename the file\n" eputs
-          1 exit
-        end
-      fpb-rewind
-
-      fpb-end
-        tmp-end
-        "chmod"c      tmp-append-ptr
-        "+x"c         tmp-append-ptr
-        fpb-end
-          base-file-path @Str fpb-append drop
-          1                   fpb-alloc  drop
-          tmp-append-ptr
-        NULL          tmp-append-ptr
-        silent @bool lnot cmd-echoed
-      fpb-rewind
-    "[INFO] fasm" silent @bool timeit/to-here
+    "[INFO] kasm" silent @bool timeit/to-here
 
     run @bool if
       tmp-end
-      fpb-end
-        base-file-path @Str fpb-append drop
-        1 fpb-alloc drop
-        tmp-append-ptr
-      while args @@ptr NULL ptr!= do
-        args @@ptr tmp-append-ptr
-        args sizeof(ptr) inc64-by
-      end
-      NULL        tmp-append-ptr
+        fpb-end
+          tmp-end
+          "gc32-20020"c       tmp-append-ptr
+          fpb-end
+            base-file-path @Str fpb-append drop
+            ".bin"              fpb-append drop
+            1                   fpb-alloc  drop
+          tmp-append-ptr
+          // fpb-end
+          //   base-file-path @Str fpb-append drop
+          //   ".tmp"              fpb-append drop
+          //   1                   fpb-alloc  drop
+          //   tmp-append-ptr
+          NULL          tmp-append-ptr
+          silent @bool lnot cmd-echoed
+        fpb-rewind
       silent @bool lnot cmd-echoed
     end
   else args @@ptr "help"c cstreq if*
