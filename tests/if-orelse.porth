@@ -1,0 +1,9 @@
+include "std.porth"
+
+proc main in
+  true if
+    69 print
+  else false if*
+    420 print
+  end
+end

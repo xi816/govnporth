@@ -1,0 +1,10 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 0
+:b stdout 45
+',' is located at index 5
+Could not find '*'
+
+:b stderr 0
+

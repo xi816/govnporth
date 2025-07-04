@@ -1,0 +1,33 @@
+include "std.porth"
+proc main in
+  memory blob sizeof(ptr) end
+  memory tmp 2 end
+  "include \"std.porth\"\nproc main in\n  memory blob sizeof(ptr) end\n  memory tmp 2 end\n  \"?\"c dup blob !64\n  while dup @8 0 != do\n    dup @8 63 = if\n      blob @ptr\n      while dup @8 0 != do\n        dup @8 '\\n' = if\n          '\\\\' tmp !8\n          'n' tmp 1 ptr+ !8\n          2 tmp puts\n        else dup @8 '\"' = if*\n          '\\\\' tmp !8\n          '\"' tmp 1 ptr+ !8\n          2 tmp puts\n        else dup @8 '\\\\' = if*\n          '\\\\' tmp !8\n          '\\\\' tmp 1 ptr+ !8\n          2 tmp puts\n        else\n          1 over puts\n        end\n\n        1 ptr+\n      end drop\n    else\n      1 over puts\n    end\n    1 ptr+\n  end drop\nend\n"c dup blob !64
+  while dup @8 0 != do
+    dup @8 63 = if
+      blob @ptr
+      while dup @8 0 != do
+        dup @8 '\n' = if
+          '\\' tmp !8
+          'n' tmp 1 ptr+ !8
+          2 tmp puts
+        else dup @8 '"' = if*
+          '\\' tmp !8
+          '"' tmp 1 ptr+ !8
+          2 tmp puts
+        else dup @8 '\\' = if*
+          '\\' tmp !8
+          '\\' tmp 1 ptr+ !8
+          2 tmp puts
+        else
+          1 over puts
+        end
+
+        1 ptr+
+      end drop
+    else
+      1 over puts
+    end
+    1 ptr+
+  end drop
+end

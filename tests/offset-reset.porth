@@ -1,0 +1,11 @@
+const sizeof(u64) 8 end
+
+const Op.type sizeof(u64) offset end
+const Op.operand sizeof(u64) offset end
+const sizeof(Op) reset end
+
+proc main in
+  Op.type    print
+  Op.operand print
+  sizeof(Op) print
+end

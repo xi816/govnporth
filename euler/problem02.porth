@@ -1,0 +1,14 @@
+include "std.porth"
+
+proc main in
+  memory acc sizeof(u64) end
+  
+  1 2 while over 4000000 < do
+    over 2 mod 0 = if
+      over acc @64 + acc !64
+    end
+  
+    swap over +
+  end drop drop
+  acc @64 print
+end

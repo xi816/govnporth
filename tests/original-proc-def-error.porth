@@ -1,0 +1,13 @@
+include "std.porth"
+
+proc hello in
+  "Hello, World" puts
+end
+
+proc hello in
+  "Foo, Bar"
+end
+
+proc main in
+  hello
+end

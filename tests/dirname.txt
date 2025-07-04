@@ -1,0 +1,17 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 0
+:b stdout 116
+hello/world => hello
+hello/world/ => hello/world
+hello => .
+./hello => .
+ => .
+/hello => /
+/ => /
+// => /
+/// => //
+
+:b stderr 0
+

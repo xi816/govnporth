@@ -1,0 +1,92 @@
+// Thumbnail Generator for https://www.youtube.com/watch?v=z3S60XTXdlw
+// Coding Session: https://www.youtube.com/watch?v=0K05OdikAgY
+
+include "std.porth"
+
+const WIDTH 1920 end
+const HEIGHT 1080 end
+const PIXEL_SIZE 40 end
+const PIXELS_COLS WIDTH PIXEL_SIZE divmod drop end
+const PIXELS_ROWS HEIGHT PIXEL_SIZE divmod drop end
+
+proc sum-bytes int -- int in
+  memory result sizeof(int) end
+  0 result !int
+  0 while dup 8 < do
+    over 255 and
+    result @int +
+    result !int
+
+    swap 8 shr swap
+
+    1 +
+  end drop drop
+  result @int
+end
+
+memory pixels PIXELS_ROWS PIXELS_COLS * end
+
+proc generate-pixels in
+  69 srand
+  0 while dup PIXELS_ROWS PIXELS_COLS * < do
+    rand sum-bytes 255 and
+    over pixels +ptr !8
+    1 +
+  end drop
+end
+
+memory file-path sizeof(ptr) end
+
+proc main in
+  "thumbnail.ppm"c file-path !ptr
+  generate-pixels
+
+  memory fd sizeof(u64) end
+
+  420
+  O_CREAT O_WRONLY or O_TRUNC or
+  file-path @ptr
+  AT_FDCWD
+  openat
+  fd !64
+
+  fd @64 0 < if
+    "ERROR: could not open file `" eputs
+    file-path @ptr cstr-to-str eputs
+    "`" eputs
+    1 exit
+  end
+
+  "P6\n"   fd @64 fputs
+  WIDTH    fd @64 fputu
+  " "      fd @64 fputs
+  HEIGHT   fd @64 fputu
+  " 255\n" fd @64 fputs
+
+  memory bytes 3 end
+
+  0 while dup HEIGHT < do
+    0 while dup WIDTH < do
+      over over
+      PIXEL_SIZE /
+      swap PIXEL_SIZE /
+      PIXELS_COLS *
+      +
+
+      pixels +ptr @8
+      dup
+      dup
+
+      bytes        !8
+      bytes 1 ptr+ !8
+      bytes 2 ptr+ !8
+
+      3 bytes fd @64 fputs
+
+      1 +
+    end drop
+    1 +
+  end drop
+
+  fd @64 close drop
+end

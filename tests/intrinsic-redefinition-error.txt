@@ -1,0 +1,9 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 93
+./tests/intrinsic-redefinition-error.porth:1:6: ERROR: redefinition of an intrinsic word `+`
+

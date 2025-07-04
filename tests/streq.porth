@@ -1,0 +1,6 @@
+include "std.porth"
+
+proc main in
+  "foo" "foo" streq print
+  "foo" "bar" streq print
+end

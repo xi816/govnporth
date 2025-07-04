@@ -1,0 +1,10 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 298
+./tests/while-alter.porth:2:3: ERROR: Unhandled data on the stack after a single iteration of the loop. The types and the amount of elements on the stack are not allowed to change between the iterations. Here are the elements currently on the stack:
+./tests/while-alter.porth:3:5: NOTE: type `int`
+

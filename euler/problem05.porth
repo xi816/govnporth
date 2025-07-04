@@ -1,0 +1,55 @@
+include "std.porth"
+
+const N 20 end
+
+proc main in
+  memory acc sizeof(u64) N * end
+  memory tmp sizeof(u64) N * end
+  memory ans sizeof(u64) end
+  
+  2 while dup N <= do
+  
+    // clean up the tmp table
+    0 while dup N < do
+      tmp over 8 * ptr+ 0 swap !64
+      1 +
+    end drop
+  
+    // factorize
+    dup 2 while over 1 > do
+      over over mod 0 = if
+        dup 8 * tmp +ptr inc64
+        swap over / swap
+      else
+        1 +
+      end
+    end drop drop
+  
+    0 while dup N < do
+      dup 8 * acc +ptr @64
+      over 8 * tmp +ptr @64
+      < if
+        dup 8 * acc +ptr
+        over 8 * tmp +ptr @64
+        swap !64
+      end
+  
+      1 +
+    end drop
+  
+    1 +
+  end drop
+  
+  1 ans !64
+  
+  0 while dup N < do
+    acc over 8 * ptr+ @64 while dup 0 > do
+      over ans @64 * ans !64
+      1 -
+    end drop
+  
+    1 +
+  end drop
+  
+  ans @64 print
+end

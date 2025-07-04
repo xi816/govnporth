@@ -1,0 +1,34 @@
+include "std.porth"
+
+memory primes-count sizeof(u64) end
+memory primes sizeof(u32) 1000000 * end
+
+proc push-prime int in
+  primes-count @32 sizeof(u32) * primes +ptr !32
+  primes-count inc32
+end
+
+proc is-prime int -- bool in // [value: int] -> [ret: bool]
+  0 while
+    over over sizeof(u32) * primes +ptr @32 dup * >= if
+      over over sizeof(u32) * primes +ptr @32 mod 0 !=
+    else false end
+  do 1 + end
+  sizeof(u32) * primes +ptr @32 dup * <
+end
+
+proc main in
+  memory ans sizeof(u64) end
+  2 push-prime
+  2 ans !64
+  
+  3 while dup 2000000 < do
+    dup is-prime if
+      dup push-prime
+      dup ans @64 + ans !64
+    end
+    1 +
+  end drop
+  
+  ans @64 print
+end

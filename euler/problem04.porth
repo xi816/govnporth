@@ -1,0 +1,32 @@
+include "std.porth"
+
+proc main in
+  memory ans sizeof(u64) end
+  
+  100 while dup 1000 < do
+    100 while dup 1000 < do
+      over over *
+  
+      dup 0 while over 0 > do
+        10 *
+        over 10 %
+        +
+        swap 10 / swap
+      end
+      swap drop
+  
+      // a b
+      over over = if
+        dup ans @64 > if
+          ans over swap !64
+        end
+      end
+  
+      drop drop
+      1 +
+    end drop
+  
+    1 +
+  end drop
+  ans @64 print
+end

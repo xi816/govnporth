@@ -1,0 +1,8 @@
+inline proc foo bool -- int in
+  if 69 else 420 end
+end
+
+proc main in
+  1 cast(bool) foo print
+  0 cast(bool) foo print
+end

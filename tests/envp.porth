@@ -1,0 +1,12 @@
+include "std.porth"
+
+// TODO: envp is not tested because test.py does not support environment variable in the test case files
+
+proc main in
+  envp
+  while dup @ptr NULL ptr!= do
+    dup @ptr cstr-to-str puts "\n" puts
+    8 ptr+
+  end
+  drop
+end

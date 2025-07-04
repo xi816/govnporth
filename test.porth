@@ -1,0 +1,77 @@
+// In progress rewrite of test.py in porth
+include "std.porth"
+
+inline proc shell -- ptr in tmp-end end
+inline proc : ptr in tmp-append-ptr end
+inline proc run ptr ptr in
+  tmp-append-ptr
+  NULL tmp-append-ptr
+  dup true cmd-echoed
+  tmp-rewind
+end
+
+proc run-file
+  ptr // file-name
+in
+  shell
+    "./porth"c : "com"c : "-s"c : "-r"c : swap
+  run
+
+  here eputs ": TODO: run-file is not fully implemented yet\n" eputs
+  1 exit
+end
+
+proc main in
+  memory args sizeof(ptr) end
+  argv args !ptr
+
+  memory program sizeof(ptr) end
+  args @@ptr program !ptr
+  args sizeof(ptr) inc64-by
+
+  args @@ptr NULL ptr= if
+    "ERROR: no subcommand was provided!\n" eputs
+    1 exit
+  end
+
+  args @@ptr
+  args sizeof(ptr) inc64-by
+    dup "run"c cstreq if
+      args @@ptr NULL ptr= if
+        "ERROR: no target was provided for the `run` subcommand\n" eputs
+        1 exit
+      end
+      args @@ptr run-file
+    else dup "update"c cstreq if*
+      args @@ptr NULL ptr= if
+        "ERROR: no subsubcommand was provided for the `update` subcommand\n" eputs
+        1 exit
+      end
+
+      args @@ptr
+        dup "bootstrap"c cstreq if
+          shell
+            "./porth"c : "com"c : "-s"c : "./porth.porth"c
+          run
+
+          shell
+            "cp"c : "-v"c : "./porth.asm"c : "./bootstrap/porth-linux-x86_64.fasm"c
+          run
+        else
+          "ERROR: unknown subsubcommand `update " eputs
+          dup cstr-to-str                         eputs
+          "`\n"                                   eputs
+          1 exit
+        end
+      drop
+    else dup "help"c cstreq if*
+      here eputs ": TODO: `help` subcommand is not implemented\n" eputs
+      1 exit
+    else
+      "ERROR: unknown subcommand `" eputs
+      dup cstr-to-str               eputs
+      "`\n"                         eputs
+      1 exit
+    end
+  drop
+end

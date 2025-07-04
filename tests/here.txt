@@ -1,0 +1,9 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 69
+:b stdout 63
+./tests/here.porth:4:3: FIXME: something needs to be done here
+
+:b stderr 0
+

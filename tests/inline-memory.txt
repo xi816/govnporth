@@ -1,0 +1,10 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 166
+./tests/inline-memory.porth:2:10: ERROR: local memories are not allowed in inlinable procedures yet
+./tests/inline-memory.porth:1:13: NOTE: the procedure starts here
+

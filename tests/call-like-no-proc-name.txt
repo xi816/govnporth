@@ -1,0 +1,9 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 118
+./tests/call-like-no-proc-name.porth:2:14: ERROR: expected procedure name after keyword `call-like`. But got nothing.
+

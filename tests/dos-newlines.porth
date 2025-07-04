@@ -1,0 +1,5 @@
+include "std.porth"
+
+proc main in
+  "This is a source code file with DOS new lines\n" puts
+end

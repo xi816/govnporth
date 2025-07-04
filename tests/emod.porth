@@ -1,0 +1,6 @@
+include "std.porth"
+
+proc main in
+  105 100 emod print
+  0 1 - 100 emod print
+end

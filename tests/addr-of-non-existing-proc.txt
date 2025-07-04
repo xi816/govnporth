@@ -1,0 +1,9 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 85
+./tests/addr-of-non-existing-proc.porth:1:9: ERROR: procedure `alert` does not exist
+

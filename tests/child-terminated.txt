@@ -1,0 +1,10 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 255
+:b stdout 36
+[CMD] ./tests/child-terminated quit
+
+:b stderr 54
+ERROR: the child process was terminated by a signal 3
+

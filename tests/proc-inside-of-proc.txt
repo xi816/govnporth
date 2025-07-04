@@ -1,0 +1,10 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 193
+./tests/proc-inside-of-proc.porth:2:1: ERROR: definition procedures inside of procedures is not allowed (for now)
+./tests/proc-inside-of-proc.porth:1:6: NOTE: the current procedure starts here
+

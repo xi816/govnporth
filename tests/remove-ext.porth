@@ -1,0 +1,22 @@
+include "std.porth"
+
+proc check-remove-ext
+  int ptr
+in
+  memory path sizeof(Str) end
+  path !Str
+
+  path @Str            puts 
+  " => "               puts
+  path @Str remove-ext puts
+  "\n"                 puts
+end
+
+proc main in
+  "/hello/world.porth" check-remove-ext
+  "/hello/world"       check-remove-ext
+  "/hello.porth/world" check-remove-ext
+  "hello.porth"        check-remove-ext
+  "/"                  check-remove-ext
+  0 NULL               check-remove-ext
+end

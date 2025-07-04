@@ -1,0 +1,9 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 92
+./tests/else-not-inside-if-error.porth:3:1: ERROR: `else` can only come after `if` or `if*`
+

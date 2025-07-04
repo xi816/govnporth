@@ -1,0 +1,14 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 0
+:b stdout 138
+/hello/world.porth => /hello/world
+/hello/world => /hello/world
+/hello.porth/world => /hello.porth/world
+hello.porth => hello
+/ => /
+ => 
+
+:b stderr 0
+

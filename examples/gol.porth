@@ -1,0 +1,144 @@
+include "std.porth"
+
+const ROWS 10 end
+const COLS 20 end
+const BOARD_SIZE ROWS COLS * end
+
+memory board-current-index sizeof(u64) end
+memory board-base BOARD_SIZE 2 * end
+memory display COLS 1 + end
+
+proc current int int -- ptr in
+  let row col in
+    row ROWS emod
+    col COLS emod
+  end
+
+  let row col in
+    board-base board-current-index @int BOARD_SIZE * ptr+
+    row COLS * col +
+    ptr+
+  end
+end
+
+proc next int int -- ptr in
+  let row col in
+    row ROWS emod
+    col COLS emod
+  end
+
+  let row col in
+    board-base 1 board-current-index @int - BOARD_SIZE * ptr+
+    row COLS * col +
+    ptr+
+  end
+end
+
+proc swap-boards in
+  1 board-current-index @64 - board-current-index !64
+end
+
+proc display-current in
+  0 while dup ROWS < do
+    0 while dup COLS < do
+      peek row col in
+        row col current @8 0 = if '.' else '#' end
+        display col ptr+
+        !8
+      end
+      1 +
+    end drop
+
+    '\n' display COLS ptr+ !8
+    COLS 1 + display puts
+
+    1 +
+  end drop
+end
+
+proc count-nbors int int -- int in
+  memory nbors sizeof(u64) end
+  0 nbors !int
+
+  let row col in
+    -1 while dup 1 <= do
+      -1 while dup 1 <= do
+        peek drow dcol in
+          drow 0 != dcol 0 != lor if
+            row drow + ROWS emod
+            col dcol + COLS emod
+            let row col in
+              row col current @8 1 = if
+                nbors inc64
+              end
+            end
+          end
+        end
+        1 +
+      end drop
+      1 +
+    end drop
+  end
+
+  nbors @int
+end
+
+proc compute-next in
+  0 while dup ROWS < do
+    0 while dup COLS < do
+      peek row col in
+        row col count-nbors
+        row col current @8 1 =
+        let nbors alive in
+          alive if
+            nbors 2 = nbors 3 = lor cast(int)
+          else
+            nbors 3 = cast(int)
+          end
+          row col next !8
+        end
+      end
+
+      1 +
+    end drop
+    1 +
+  end drop
+end
+
+// .*.
+// ..*
+// ***
+proc put-glider int int in
+  let row col in
+    1 row 0 + col 1 + current !8
+    1 row 1 + col 2 + current !8
+    1 row 2 + col 0 + current !8
+    1 row 2 + col 1 + current !8
+    1 row 2 + col 2 + current !8
+  end
+end
+
+proc main in
+  memory delta_time sizeof(timespec) end
+  100000000 delta_time 8 ptr+ !64
+
+  0 while dup 5 < do
+    peek i in
+      i 4 * i 4 * put-glider
+    end
+    1 +
+  end drop
+
+  while true do
+    display-current
+    compute-next
+    swap-boards
+
+    NULL delta_time 0 CLOCK_MONOTONIC clock_nanosleep drop
+    // TODO: support for these kind of escape characters
+    // "\033[" puts ROWS putu "A" puts
+    // "\033[" puts COLS putu "D" puts
+    27 putch "[" puts ROWS putu "A" puts
+    27 putch "[" puts COLS putu "D" puts
+  end
+end

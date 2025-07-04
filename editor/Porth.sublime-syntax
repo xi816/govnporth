@@ -1,0 +1,53 @@
+%YAML 1.2
+---
+# Usage Instruction
+# Put this file and "Porth.Comments.tmPreferences" in:
+# - Linux: $home/.config/sublime-text/Packages/User
+# - Mac: $home/Library/Application Support/Sublime Text/Packages/User
+# - Windows: %appdata%\Sublime Text\Packages\User
+# Select "View > Syntax > Porth" or "View > Syntax > User > Porth"
+
+# See http://www.sublimetext.com/docs/syntax.html
+# Derived from https://github.com/sublimehq/Packages/blob/master/Go/Go.sublime-syntax
+
+name: Porth
+scope: source.porth
+file_extensions:
+  - porth
+
+variables:
+  keywords: (if|if\*|else|while|do|include|memory|proc|const|end|offset|reset|assert|in|inline|here|addr-of|call-like|let|peek)
+  char_escape: \\[nr\\"']
+  number: ([0-9]+)
+
+contexts:
+  main:
+    - include: match-comments
+    # Keywords
+    - match: (?<=^|\s){{keywords}}(?=\s|//|$)
+      scope: keyword.control.porth
+    # Numbers
+    - match: (?<=^|\s){{number}}(?=\s|//|$)
+      scope: constant.numeric.integer.decimal.porth
+    # Strings
+    - match: (?<=^|\s)"
+      push:
+        - meta_scope: string.quoted.double.porth
+        - match: '"c?(?=\s|//|$)'
+          pop: true
+        - match: \n
+          pop: true
+        - match: '{{char_escape}}'
+          scope: constant.character.escape.porth
+    # Characters
+    - match: '''(?:({{char_escape}})|[^''])'''
+      scope: string.quoted.single.porth
+      captures:
+        1: constant.character.escape.porth
+
+  match-comments:
+    - match: //
+      push:
+        - meta_scope: comment.line.porth
+        - match: $\n?
+          pop: true

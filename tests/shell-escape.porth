@@ -1,0 +1,7 @@
+include "std.porth"
+
+proc main in
+  "hello"            shell-escape puts "\n" puts
+  "hello && world"   shell-escape puts "\n" puts
+  "hello '&&' world" shell-escape puts "\n" puts
+end

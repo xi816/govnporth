@@ -1,0 +1,26 @@
+include "std.porth"
+
+proc foo in
+  "foo\n" puts
+end
+
+proc bar in
+  "bar\n" puts
+end
+
+const N 5 end
+memory funcs sizeof(addr) N * end
+
+proc main in
+  addr-of foo funcs 0 sizeof(addr) * ptr+ !addr
+  addr-of bar funcs 1 sizeof(addr) * ptr+ !addr
+  addr-of bar funcs 2 sizeof(addr) * ptr+ !addr
+  addr-of foo funcs 3 sizeof(addr) * ptr+ !addr
+  addr-of foo funcs 4 sizeof(addr) * ptr+ !addr
+
+  0 while dup N < do
+    dup sizeof(addr) * funcs +ptr @addr
+    call-like foo
+    1 +
+  end drop
+end

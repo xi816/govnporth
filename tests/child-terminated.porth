@@ -1,0 +1,17 @@
+include "std.porth"
+
+proc main in
+  argv @ptr
+  let me in
+    argc 1 <= if
+      tmp-end
+        me               tmp-append-ptr
+        "quit"c          tmp-append-ptr
+        NULL             tmp-append-ptr
+        dup true cmd-echoed
+      tmp-rewind
+    else
+      SIGQUIT getpid kill drop
+    end
+  end
+end

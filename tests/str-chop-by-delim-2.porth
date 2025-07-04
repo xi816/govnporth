@@ -1,0 +1,10 @@
+include "std.porth"
+
+proc main in
+  "foo,bar,baz"
+  while over 0 > do
+    ',' str-chop-by-delim-2
+    puts "\n" puts
+  end
+  drop drop
+end

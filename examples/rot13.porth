@@ -1,0 +1,33 @@
+include "std.porth"
+
+const BUFFER_CAP 1024 end
+memory buffer BUFFER_CAP end
+
+proc main in
+  BUFFER_CAP buffer stdin read
+  while dup 0 > do
+    0
+    while over over > do
+      dup buffer +ptr @8
+  
+      dup 'a' >= over 'z' <= land if
+        over over 'a' - 13 + 26 mod 'a' +
+        swap buffer +ptr !8
+      end
+  
+      dup 'A' >= over 'Z' <= land if
+        over over 'A' - 13 + 26 mod 'A' +
+        swap buffer +ptr !8
+      end
+  
+      drop
+  
+      1 +
+    end
+    drop
+  
+    buffer puts
+    BUFFER_CAP buffer stdin read
+  end
+  drop
+end

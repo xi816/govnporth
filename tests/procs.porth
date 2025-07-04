@@ -1,0 +1,22 @@
+include "std.porth"
+
+proc check_less int int in
+  < if "YES\n" else "NO\n" end puts
+end
+
+proc even_fibs in
+  0 1 while over 1000000 < do
+    over 2 mod 0 = if
+      over print
+    end
+    swap over +
+  end
+  drop drop
+end
+
+proc main in
+  1 2 check_less
+  2 1 check_less
+  "------------------------------\n" puts
+  even_fibs
+end

@@ -1,0 +1,10 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 174
+./tests/proc-redefinition-error.porth:2:6: ERROR: redefinition of a procedure `test`
+./tests/proc-redefinition-error.porth:1:6: NOTE: the original definition is located here
+

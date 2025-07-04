@@ -1,0 +1,18 @@
+include "std.porth"
+
+const MON 1 offset end
+const TUE 1 offset end
+const WED 1 offset end
+const THU 1 offset end
+const FRI 1 offset end
+const SAT 1 offset end
+const SUN 1 offset end
+const COUNT_DAYS reset end
+
+assert "You have a weird week, buddy"
+  COUNT_DAYS 8 =
+end
+
+proc main in
+  COUNT_DAYS print
+end

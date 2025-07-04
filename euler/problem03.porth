@@ -1,0 +1,13 @@
+include "std.porth"
+
+proc main in
+  600851475143 2 while over 1 > do
+    over over mod 0 = if
+      swap over / swap
+    else
+      1 +
+    end
+  end
+  print
+  drop
+end

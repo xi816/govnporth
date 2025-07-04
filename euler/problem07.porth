@@ -1,0 +1,36 @@
+include "std.porth"
+
+const N 10001 end
+
+memory primes-count sizeof(u64) end
+memory primes sizeof(u64) N * 10 + end
+
+proc is-prime int -- bool in
+  0
+  while
+    over over 8 * primes +ptr @64 dup * >= if
+       over over 8 * primes +ptr @64 mod 0 !=
+    else
+       false
+    end
+  do 1 + end
+  8 * primes +ptr @64 dup * <
+end
+
+proc add-prime int in
+  primes primes-count @64 8 * ptr+ !64
+  primes-count inc64
+end
+
+proc main in
+  2 add-prime
+  
+  3 while primes-count @64 N < do
+    dup is-prime if
+      dup add-prime
+    end
+    1 +
+  end drop
+  
+  primes N 1 - 8 * ptr+ @64 print
+end

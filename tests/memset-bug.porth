@@ -1,0 +1,15 @@
+include "std.porth"
+
+const N 32 end
+memory xs N end
+
+proc main in
+  0 while dup N < do
+    'a' over xs +ptr !8
+    1 +
+  end drop
+  
+  N xs puts "\n" puts
+  15 'b' xs memset drop
+  N xs puts "\n" puts
+end

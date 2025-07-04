@@ -1,0 +1,7 @@
+include "std.porth"
+
+proc main in
+  "Hello" "Hello, World" str-starts-with print
+  "World" "Hello, World" str-starts-with print
+  "Hello, World" "Hello" str-starts-with print
+end

@@ -1,0 +1,5 @@
+include "std.porth"
+
+proc main in
+  -35 34 + puti "\n" puts
+end

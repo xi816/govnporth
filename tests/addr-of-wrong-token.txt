@@ -1,0 +1,9 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 105
+./tests/addr-of-wrong-token.porth:1:9: ERROR: expected a word after keyword `addr-of` but got an integer
+

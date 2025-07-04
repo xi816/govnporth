@@ -1,0 +1,11 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 266
+./tests/let-binding-loc-diag.porth:3:9: ERROR: Argument 0 of `+` is expected to be type `int` but got type `ptr`
+./tests/let-binding-loc-diag.porth:3:7: NOTE: Argument 0 was provided here
+./tests/let-binding-loc-diag.porth:3:9: NOTE: Expected type was declared here
+

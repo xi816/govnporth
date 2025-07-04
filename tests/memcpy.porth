@@ -1,0 +1,32 @@
+include "std.porth"
+
+const N 32              end
+const K 8               end
+// TODOO: explore the idea of using inline procs in consts
+// So you can use the `div` procedure directly in here.
+//
+// - rexim 24.01.2022
+const M N K divmod drop end
+
+memory a N end
+memory b M end
+
+proc main in
+  0 while dup M < do
+    dup 'a' +
+    over b +ptr
+    !8
+    1 +
+  end drop
+
+  0 while dup K < do
+    dup M * a +ptr
+    M b rot memcpy drop
+    1 +
+  end drop
+
+  0 while dup K < do
+    N a puts "\n" puts
+    1 +
+  end drop
+end

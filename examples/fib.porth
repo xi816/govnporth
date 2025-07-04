@@ -1,0 +1,11 @@
+const N 4000000 end
+
+proc main in
+  0 1 while over N < do
+    let a b in
+      a print
+      b a b +
+    end
+  end
+  drop drop
+end

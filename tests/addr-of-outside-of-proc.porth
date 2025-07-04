@@ -1,0 +1,8 @@
+include "std.porth"
+
+proc main in
+  "What's that thing doing down there?\n" puts
+end
+
+// TODO: this should not be allowed
+addr-of main

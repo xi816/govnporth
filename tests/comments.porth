@@ -1,0 +1,10 @@
+include "std.porth"
+
+proc main in
+  //comment one
+  // comment two
+  //////nonsense comment
+  
+  // string literal with `//` should be printed
+  "Hello, // World\n" puts // this comment should be allowed 
+end

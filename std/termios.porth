@@ -1,0 +1,26 @@
+include "linux.porth"
+
+proc tcgetattr
+  ptr // tio
+  int // fd
+  --
+  int
+in
+  let tio fd in tio TCGETS fd ioctl end
+end
+
+proc tcsetattr
+  ptr // tio
+  int // act
+  int // fd
+  --
+  int
+in
+  let tio act fd in
+    act 0 < act 2 > lor if
+      EINVAL neg
+    else
+      tio TCSETS act + fd ioctl
+    end
+  end
+end

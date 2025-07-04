@@ -1,0 +1,12 @@
+memory a 8 end
+
+proc foo in
+  memory a 8 end
+  420 a !64
+  a @64 print
+end
+
+proc main in
+  69 a !64
+  foo a @64 print
+end

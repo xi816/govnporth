@@ -1,0 +1,9 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 110
+./tests/call-like-wrong-token.porth:1:11: ERROR: expected a word after keyword `call-like` but got an integer
+

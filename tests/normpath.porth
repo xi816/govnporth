@@ -1,0 +1,19 @@
+include "std.porth"
+
+proc test-normpath int ptr in
+  let n s in
+    tmp-end
+      "\"" puts n s          puts "\"" puts " => " puts
+      "\"" puts n s normpath puts "\"" puts "\n"   puts
+    tmp-rewind
+  end
+end
+
+proc main in
+  "////../../hello//../../test/././hello///./" test-normpath
+  "//../../hello//../../test/././hello///./" test-normpath
+  "/../../hello//../../test/././hello///./" test-normpath
+  "../../hello//../../test/././hello///./" test-normpath
+  "" test-normpath
+  "foo/bar/../../" test-normpath
+end

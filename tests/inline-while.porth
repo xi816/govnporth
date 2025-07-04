@@ -1,0 +1,8 @@
+inline proc foo int in
+  while dup 0 > do dup print 1 - end drop
+end
+
+proc main in
+  3 foo
+  4 foo
+end

@@ -1,0 +1,28 @@
+include "std/std.porth"
+
+inline proc tri int -- int in dup 1 + * 2 / end
+
+proc count-div int -- int in
+  memory result sizeof(int) end
+  0 result !int
+  1 while over over dup * > do
+    over over mod 0 = if
+      result inc64
+    end
+    1 +
+  end
+  dup * = if 1 else 0 end
+  result @int 2 *
+  +
+end
+
+proc main in
+  1 while
+    dup tri
+    dup count-div 500 <= if
+      drop true
+    else
+      print false
+    end
+  do 1 + end drop
+end

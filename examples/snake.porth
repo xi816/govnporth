@@ -1,0 +1,300 @@
+include "std.porth"
+include "termios.porth"
+
+const ROWS 10 end
+const COLS 25 end
+
+const CELL_EMPTY 1 offset end
+const CELL_EGG   1 offset end
+const CELL_SNAKE 1 offset end
+const COUNT_CELLS reset end
+const sizeof(Cell) sizeof(int) end
+
+memory cells sizeof(Cell) ROWS * COLS * end
+
+inline proc cell-at int int -- ptr in
+  let x y in
+    y COLS * x +
+    sizeof(Cell) *
+    cells +ptr
+  end
+end
+
+const Point.x sizeof(int) offset end
+const Point.y sizeof(int) offset end
+const sizeof(Point) reset end
+
+inline proc @Point ptr -- int int in
+  let p in
+    p Point.x ptr+ @int
+    p Point.y ptr+ @int
+  end
+end
+
+inline proc !Point int int ptr in
+  let x y p in
+    x p Point.x ptr+ !int
+    y p Point.y ptr+ !int
+  end
+end
+
+const DIR_UP    1 offset end
+const DIR_DOWN  1 offset end
+const DIR_LEFT  1 offset end
+const DIR_RIGHT 1 offset end
+const COUNT_DIRS reset end
+const sizeof(Dir) sizeof(int) end
+
+proc step-point
+  int int // x y
+  int     // dir
+  --
+  int int // x' y'
+in
+  let x y dir in
+    dir DIR_UP = if
+      x
+      y 1 -
+    else dir DIR_DOWN = if*
+      x
+      y 1 +
+    else dir DIR_LEFT = if*
+      x 1 -
+      y
+    else dir DIR_RIGHT = if*
+      x 1 +
+      y
+    else
+      0 0
+      here eputs ": unrechable\n" eputs
+      1 exit
+    end
+  end
+
+  let x y in
+    x COLS emod
+    y ROWS emod
+  end
+end
+
+const SNAKE_CAP ROWS COLS * end
+memory snake sizeof(Point) SNAKE_CAP * end
+memory snake-begin sizeof(int) end
+memory snake-size  sizeof(int) end
+
+proc snake-add int int in
+  snake-size @int SNAKE_CAP >= if
+    here eputs ": You Won!\n" eputs
+    1 exit
+  end
+
+  let x y in
+    CELL_SNAKE
+    x y cell-at
+    !int
+
+    x y
+    snake-begin @int
+    snake-size  @int +
+    SNAKE_CAP mod
+    sizeof(Point) *
+    snake +ptr
+    !Point
+
+    snake-size inc64
+  end
+end
+
+proc snake-del in
+  snake-size @int 0 <= if
+    here eputs ": Assertion Failed: snake underflow!\n" eputs
+    1 exit
+  end
+
+  snake-begin @int
+  sizeof(Point) *
+  snake +ptr
+  @Point
+  let x y in
+    CELL_EMPTY
+    x y cell-at
+    !int
+
+    snake-size dec64
+    snake-begin @int
+    1 +
+    SNAKE_CAP mod
+    snake-begin !int
+  end
+end
+
+memory head-pos sizeof(Point) end
+memory head-dir sizeof(Dir) end
+
+memory quit sizeof(bool) end
+memory pause sizeof(bool) end
+memory score sizeof(int) end
+memory input 1 end
+
+proc display in
+  "Score: " puts score @int putu "\n" puts
+  0 while dup ROWS < do
+    0 while dup COLS < do
+      peek y x in
+        x y cell-at @int
+        let cell in
+          cell CELL_EMPTY = if
+            '.' putch
+          else cell CELL_EGG = if*
+            '*' putch
+          else cell CELL_SNAKE = if*
+            '#' putch
+          else
+            here eputs ": Assertion Failed: unreachable\n" eputs
+            1 exit
+          end
+        end
+      end
+      1 +
+    end drop
+    "\n" puts
+    1 +
+  end drop
+  "WASD to move, Q to quit, SPACE to toggle pause\n" puts
+end
+
+proc spawn-egg in
+  CELL_EGG
+    rand 32 shl COLS mod
+    rand 32 shl ROWS mod
+    while over over cell-at @int CELL_EMPTY != do
+      drop drop
+      rand 32 shl COLS mod
+      rand 32 shl ROWS mod
+    end
+  cell-at !int
+end
+
+proc spawn-snake
+  int int // x y
+  int     // dir
+  int     // len
+in
+  let x y dir len in
+    x y head-pos !Point
+    dir head-dir !int
+    x y snake-add
+
+    1 while dup len < do
+      head-pos @Point
+      head-dir @int
+      step-point
+      head-pos !Point
+
+      head-pos @Point snake-add
+
+      1 +
+    end drop
+  end
+end
+
+proc main in
+  memory saved-tattr sizeof(termios) end
+  memory tattr sizeof(termios) end
+
+  stdin isatty lnot if
+    "ERROR: this game can only be played in a terminal" eputs
+    1 exit
+  end
+  drop // ignore the errno, does not really matter in this case
+
+  saved-tattr stdin tcgetattr drop
+  tattr stdin tcgetattr drop
+  tattr termios.c_lflag ptr+
+  let c_lflag in
+    c_lflag @int
+    ICANON ECHO or not
+    and
+    c_lflag !int
+  end
+  tattr termios.c_cc ptr+
+  let c_cc in
+    1 c_cc VMIN  ptr+ !8
+    0 c_cc VTIME ptr+ !8
+  end
+  tattr TCSAFLUSH stdin tcsetattr drop
+
+  memory delta_time sizeof(timespec) end
+  200000000 delta_time timespec.tv_nsec ptr+ !int
+  0 delta_time timespec.tv_sec  ptr+ !int
+
+  0 F_GETFL stdin fcntl O_NONBLOCK or
+  F_SETFL
+  stdin
+  fcntl
+  drop
+
+  5 5 DIR_RIGHT 3 spawn-snake
+  spawn-egg
+
+  display
+  while quit @bool lnot do
+    27 putch "[" puts ROWS 2 + putu "A" puts
+    27 putch "[" puts COLS     putu "D" puts
+    display
+
+    1 input stdin read
+    let ret in
+      ret 1 = if
+        input @8
+        head-dir @int
+        let cmd dir in
+          cmd 's' = dir DIR_UP != land if
+            DIR_DOWN head-dir !int
+          else cmd 'w' = dir DIR_DOWN != land if*
+            DIR_UP head-dir !int
+          else cmd 'a' = dir DIR_RIGHT != land if*
+            DIR_LEFT head-dir !int
+          else cmd 'd' = dir DIR_LEFT != land if*
+            DIR_RIGHT head-dir !int
+          else cmd 'q' = if*
+            true quit !bool
+          else cmd ' ' = if*
+            pause toggle
+          end
+        end
+      else ret 0 EAGAIN - != if*
+        here eputs ": reading command has failed\n" eputs
+        1 exit
+      end
+
+      pause @bool lnot if
+        head-pos @Point
+        head-dir @int
+        step-point
+        head-pos !Point
+
+        head-pos @Point cell-at @int
+        let cell in
+          cell CELL_SNAKE = if
+            "You Died with Score: " puts score @int putu "\n" puts
+            true quit !bool
+          else cell CELL_EGG = if*
+            head-pos @Point snake-add
+            score inc64
+            spawn-egg
+          else cell CELL_EMPTY = if*
+            snake-del
+            head-pos @Point snake-add
+          end
+        end
+      end
+
+      NULL delta_time 0 CLOCK_MONOTONIC clock_nanosleep drop
+    end
+  end
+
+  // TODO: restore the terminal state on SIGINT
+  // requires being able to handle POSIX signals I guess
+  saved-tattr TCSANOW stdin tcsetattr drop
+end

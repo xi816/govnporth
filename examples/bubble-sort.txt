@@ -1,0 +1,11 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 0
+:b stdout 154
+-- Bubble Sort --
+Unsorted: 23 24 19 55 12 7 50 44 43 2 38 40 49 39 36 26 20 1 36 17 
+Sorted:   1 2 7 12 17 19 20 23 24 26 36 36 38 39 40 43 44 49 50 55 
+
+:b stderr 0
+

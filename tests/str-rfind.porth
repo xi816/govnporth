@@ -1,0 +1,28 @@
+include "std.porth"
+
+proc check-str-rfind
+  int ptr
+  int
+in
+  memory needle sizeof(int) end
+  dup needle !int
+
+  str-rfind
+  dup 0 >= if
+    "'"                      puts
+    needle @int              putch
+    "' is located at index " puts
+    putu
+    "\n"                     puts
+  else
+    drop
+    "Could not find '"       puts
+    needle @int              putch
+    "'\n"                    puts
+  end
+end
+
+proc main in
+  "Hello, World" ',' check-str-rfind
+  "Hello, World" '*' check-str-rfind
+end

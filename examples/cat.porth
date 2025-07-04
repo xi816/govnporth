@@ -1,0 +1,41 @@
+include "std.porth"
+
+const BUFFER_CAP 1024 end
+memory buffer BUFFER_CAP end
+
+proc cat_fd int in
+  let fd in
+    BUFFER_CAP buffer fd read
+      while dup 0 > do
+         buffer puts
+         BUFFER_CAP buffer fd read
+      end
+    drop
+  end
+end
+
+proc main in
+  argc 2 < if
+    stdin cat_fd
+  else
+    1 while dup argc < do
+      dup nth_argv
+      let file_path_cstr in
+        0 O_RDONLY file_path_cstr AT_FDCWD openat
+
+        let fd in
+          fd 0 < if
+            "ERROR: could not open file " eputs
+            file_path_cstr cstr-to-str    eputs
+            "\n"                          eputs
+          else
+            fd cat_fd
+            fd close drop
+          end
+        end
+      end
+
+      1 +
+    end drop
+  end
+end

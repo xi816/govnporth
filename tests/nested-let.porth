@@ -1,0 +1,20 @@
+include "std.porth"
+
+proc main in
+  1 2
+  let a b in
+    a print
+    b print
+    "------------------------------\n" puts
+    3 4
+    let c d in
+      a print
+      b print
+      c print
+      d print
+    end
+    "------------------------------\n" puts
+    a print
+    b print
+  end
+end

@@ -1,0 +1,35 @@
+include "std.porth"
+
+const N 5 end
+memory xs sizeof(u64) N * end
+
+proc dump-xs in
+  0 while dup N < do
+    dup sizeof(u64) * xs +ptr
+    @64
+    print
+    1 +
+  end
+  drop
+end
+
+proc main in
+  0 while dup N < do
+    dup
+    dup sizeof(u64) * xs +ptr
+    !64
+    1 +
+  end
+  drop
+  
+  dump-xs
+  
+  sizeof(u64) N *
+  0
+  xs
+  memset drop
+  
+  "------------------------------\n" puts
+  
+  dump-xs
+end

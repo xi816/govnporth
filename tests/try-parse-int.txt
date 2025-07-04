@@ -1,0 +1,15 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 0
+:b stdout 165
+"" is not a number
+Successfully parsed 0
+Successfully parsed 1234
+Successfully parsed 987654321
+"abcd" is not a number
+Successfully parsed -1234
+"-" is not a number
+
+:b stderr 0
+

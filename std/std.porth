@@ -1,0 +1,1158 @@
+// The main standard library that you probably want to include into
+// your Porth program
+
+include "core.porth"
+include "linux.porth"
+
+/// Standard streams
+const stdin  0 end
+const stdout 1 end
+const stderr 2 end
+
+inline proc nth_argv int -- ptr in
+  sizeof(ptr) *
+  argv +ptr
+  @ptr cast(ptr)
+end
+
+proc cstrlen ptr -- int in
+  dup
+  while dup @8 0 != do 1 ptr+ end
+  swap ptr-diff
+end
+
+proc cstreq ptr ptr -- bool in
+  while
+    peek s1 s2 in
+      s1 @8 0 != s2 @8 0 != land if
+         s1 @8 s2 @8 =
+      else false end
+    end
+  do
+    let s1 s2 in
+      s1 1 ptr+
+      s2 1 ptr+
+    end
+  end
+
+  let s1 s2 in
+    s1 @8 0 =
+    s2 @8 0 =
+    land
+  end
+end
+
+inline proc cstr-to-str ptr -- int ptr in dup cstrlen swap end
+
+// TODO: fputs should crash the app if write fails
+inline proc fputs int ptr int in write drop end
+inline proc puts int ptr in stdout fputs end
+inline proc eputs int ptr in stderr fputs end
+
+const offsetof(Str.count) sizeof(u64) offset end
+const offsetof(Str.data) sizeof(ptr) offset end
+const sizeof(Str) reset end
+
+inline proc Str.count ptr -- ptr in offsetof(Str.count) ptr+ end
+inline proc Str.data ptr -- ptr in offsetof(Str.data) ptr+ end
+inline proc @Str.count ptr -- int in Str.count @64 end
+inline proc @Str.data ptr -- ptr in Str.data  @64 cast(ptr) end
+inline proc !Str.count int ptr in Str.count !64 end
+inline proc !Str.data ptr ptr in Str.data  !64 end
+
+inline proc @Str ptr -- int ptr in
+  let s in
+    s @Str.count
+    s @Str.data
+  end
+end
+
+inline proc !Str int ptr ptr in
+  let n s p in
+    n p !Str.count
+    s p !Str.data
+  end
+end
+
+inline proc str-null -- int ptr in 0 NULL end
+
+inline proc str-chop-one-left ptr in
+   dup Str.count dec64
+       Str.data inc64
+end
+
+inline proc str-chop-one-right ptr in
+  Str.count dec64
+end
+
+proc ?space int -- bool in
+  let x in
+    x ' '  =
+    x '\n' = lor
+    x '\r' = lor
+  end
+end
+
+proc str-trim-left ptr in // input --
+  while
+    dup @Str.count 0 > if
+      dup @Str.data @8 ?space
+    else false end
+  do
+    dup str-chop-one-left
+  end
+  drop
+end
+
+proc str-chop-by-predicate
+  addr // predicate
+  ptr // dst
+  ptr // src
+in
+  memory predicate sizeof(addr) end
+  rot predicate !addr
+  over over @Str.data swap !Str.data
+  over 0 swap !Str.count
+  while
+    dup @Str.count 0 > if
+       dup @Str.data @8 predicate @addr call-like ?space lnot
+    else false end
+  do
+    dup str-chop-one-left
+    swap dup Str.count inc64 swap
+  end
+  dup @Str.count 0 > if
+    dup str-chop-one-left
+  end
+  drop drop
+end
+
+proc str-chop-by-delim
+  int // delim
+  ptr // dst
+  ptr // src
+in
+  memory delim sizeof(u64) end
+  rot delim !64
+  over over @Str.data swap !Str.data
+  over 0 swap !Str.count
+  while
+    dup @Str.count 0 > if
+       dup @Str.data @8 delim @64 !=
+    else false end
+  do
+    dup str-chop-one-left
+    swap dup Str.count inc64 swap
+  end
+  dup @Str.count 0 > if
+    dup str-chop-one-left
+  end
+  drop drop
+end
+
+proc str-chop-by-delim-2
+  int ptr  // input str
+  int      // delim
+  --
+  int ptr  // rest
+  int ptr  // prefix
+in
+  let n s1 delim in
+    0 s1
+    while
+      peek i s2 in
+        i n < if
+          s2 @8 delim !=
+        else false end
+      end
+    do
+      let i s2 in
+        i  1 +
+        s2 1 ptr+
+      end
+    end
+
+    let i s2 in
+      i n < if
+        n i - 1 -
+        s2    1 ptr+
+      else
+        n i -
+        s2
+      end
+      i s1
+    end
+  end
+end
+
+proc str-starts-with
+  int ptr // prefix
+  int ptr // input
+  --
+  bool
+in
+  let pn ps n s in
+    pn n <= if
+      pn ps s
+      while
+        peek pn ps s in
+          pn 0 > if ps @8 s @8 = else false end
+        end
+      do
+        let pn ps s in
+          pn 1 -
+          ps 1 ptr+
+          s  1 ptr+
+        end
+      end
+      let pn _ _ in pn 0 <= end
+    else false end
+  end
+end
+
+inline proc ?str-empty ptr -- bool in
+  offsetof(Str.count) ptr+
+  @64
+  0 =
+end
+
+proc streq
+  int ptr
+  int ptr
+  --
+  bool
+in
+  let n s1 m s2 in
+    n m = if
+      n s1 s2
+      while
+        peek n s1 s2 in
+          n 0 > if
+            s1 @8 s2 @8 =
+          else false end
+        end
+      do
+        let n s1 s2 in
+          n  1 -
+          s1 1 ptr+
+          s2 1 ptr+
+        end
+      end
+
+      let n _ _ in n 0 <= end
+    else false end
+  end
+end
+
+inline proc ?digit int -- bool in
+  let x in
+    x '0' >=
+    x '9' <=
+    land
+  end
+end
+inline proc isdigit int -- bool in ?digit end // @deprecated
+
+inline proc ?alpha int -- bool in
+  let x in
+    x 'a' >=
+    x 'z' <=
+    land
+
+    x 'A' >=
+    x 'Z' <=
+    land
+
+    lor
+  end
+end
+inline proc isalpha int -- bool in ?alpha end // @deprecated
+
+inline proc ?alnum int -- bool in
+  let x in
+    x ?digit
+    x ?alpha
+    lor
+  end
+end
+inline proc isalnum int -- bool in ?alnum end // @deprecated
+
+proc try-parse-int
+  int ptr
+  --
+  int bool
+in
+  over 0 > if
+    let n s in
+      s @8 '-' =
+
+      dup if
+        n 1 -
+        s 1 ptr+
+      else n s end
+    end
+
+    over 0 > if
+      0 // result
+      while
+        peek n s result in
+          n 0 > if s @8 ?digit else false end
+        end
+      do
+        let n s result in
+          n 1 -
+          s 1 ptr+
+
+          result 10 *
+          s @8 '0' -
+          +
+        end
+      end
+
+      let minus n _ result in
+        result
+        minus if not 1 + end
+        n 0 <=
+      end
+    else
+      let _ _ _ in 0 false end
+    end
+  else
+    drop drop
+    0 false
+  end
+end
+
+const PUTU_BUFFER_CAP 32 end
+// TODO: fputu should fail if write call fails
+proc fputu
+  int // number
+  int // fd
+in
+  memory buffer PUTU_BUFFER_CAP end
+  memory fd sizeof(u64) end
+  fd !64
+
+  dup 0 = if
+    "0" fd @64 fputs
+  else
+    buffer PUTU_BUFFER_CAP ptr+
+    while over 0 != do
+      1 ptr- dup rot
+      10 divmod
+      rot swap '0' + swap !8 swap
+    end
+
+    dup
+    buffer PUTU_BUFFER_CAP ptr+ swap ptr-diff swap fd @64 fputs
+  end
+  drop
+end
+
+proc fputi
+  int // number
+  int // fd
+in
+  let number fd in
+    number 0 < if
+      "-" fd fputs
+      number not 1 +
+    else
+      number
+    end
+    fd fputu
+  end
+end
+
+proc fput0u
+  int // number
+  int // padding
+  int // fd
+in
+  memory buffer PUTU_BUFFER_CAP end
+  memory fd sizeof(int) end
+  fd !int
+  memory padding sizeof(int) end
+  padding !int
+  memory number sizeof(int) end
+  number !int
+
+  // *********9010
+  //          ^
+
+  buffer PUTU_BUFFER_CAP ptr+
+  while
+    padding @int 0 >
+    number  @int 0 >
+    lor
+  do
+    1 ptr-
+
+    number @int
+    10 divmod
+    '0' +
+    rot over over !8
+    rot number !int
+    swap drop
+
+    padding dec64
+  end
+
+  dup buffer PUTU_BUFFER_CAP ptr+ swap ptr-diff swap fd @64 fputs
+end
+
+// TODO: implement putx that prints a number in hex
+
+inline proc puti int in stdout fputi end
+
+inline proc putu int in stdout fputu end
+inline proc put0u int int in stdout fput0u end
+inline proc eputu int in stderr fputu end
+
+proc memcpy
+  int // size
+  ptr // src
+  ptr // dst
+  --
+  ptr // dst
+in
+  memory src sizeof(ptr) end
+  memory dst sizeof(ptr) end
+  memory result sizeof(ptr) end
+  dst !64
+  src !64
+  dst @ptr swap // result
+  while dup 0 > do
+    src @ptr @8
+    dst @ptr !8
+    src inc64
+    dst inc64
+    1 -
+  end drop
+end
+
+proc memset
+  int // size
+  int // byte
+  ptr // data
+  --
+  ptr // data
+in
+  memory data sizeof(ptr) end
+  data !64
+  memory byte sizeof(u64) end
+  byte !64
+  data @ptr swap
+  while dup 0 > do
+    byte @64 data @ptr !8
+    data inc64
+    1 -
+  end
+  drop
+end
+
+memory rand-state sizeof(u64) end
+
+inline proc srand int in
+  rand-state !64
+end
+
+// Stolen from https://en.wikipedia.org/wiki/Linear_congruential_generator
+// Using the values of MMIX by Donald Knuth
+const RAND_A 6364136223846793005 end
+const RAND_C 1442695040888963407 end
+
+inline proc rand -- int in
+  rand-state @64
+  RAND_A *
+  RAND_C +
+  dup
+  rand-state !64
+end
+
+proc getenv
+  int ptr // name as str
+  --
+  ptr     // value as cstr
+in
+  memory name sizeof(Str) end
+  name !Str
+
+  memory env-name sizeof(Str) end
+  memory env-value  sizeof(Str) end
+
+  envp
+  while
+    dup @ptr NULL ptr!= if
+      dup @ptr cstr-to-str env-value !Str
+      '=' env-name env-value str-chop-by-delim
+      env-name @Str name @Str streq lnot
+    else false end
+  do 8 ptr+ end
+
+  NULL ptr!= if
+    env-value @Str.data
+  else
+    NULL
+  end
+end
+
+// 8MB of temporary scratch buffer
+const TMP_CAP 8 1024 * 1024 * end
+memory tmp-start TMP_CAP end
+memory tmp-size sizeof(u64) end
+
+inline proc tmp-clean in 0 tmp-size !64 end
+inline proc tmp-end -- ptr in tmp-start tmp-size @64 ptr+ end
+// TODO: make tmp-rewind to fill up the "freed" memory with some recognizable pattern like 0xcccccccc
+// It should be probably enabled in some special debug mode, cause it's a runtime cost
+inline proc tmp-rewind ptr in tmp-start ptr-diff tmp-size !int end
+
+proc tmp-alloc
+  int
+  --
+  ptr // result
+in
+  dup tmp-size @64 + TMP_CAP > if
+    here eputs ": Temporary memory buffer capacity exceeded. Need to call tmp-clean more often\n" eputs
+    1 exit
+  end
+
+  dup 0 tmp-end memset
+  tmp-size @64 rot + tmp-size !64
+end
+
+inline proc tmp-str-to-cstr int ptr -- ptr in over 1 + tmp-alloc memcpy end
+inline proc tmp-append int ptr -- ptr in over tmp-alloc memcpy end
+inline proc tmp-append-ptr ptr in
+  sizeof(ptr) tmp-alloc !ptr
+end
+
+proc execvp
+  ptr // argv
+  ptr // file
+in
+  memory argvp sizeof(ptr) end
+  argvp !64
+
+  memory file-path sizeof(ptr) end
+  file-path !64
+
+  envp
+  argvp @ptr
+  file-path @ptr
+  execve drop
+
+  memory paths sizeof(Str) end
+  memory path sizeof(Str) end
+
+  "PATH" getenv
+
+  dup NULL ptr= if
+    "Could not find $PATH\n" eputs
+    1 exit
+  else
+    dup cstr-to-str paths !Str
+    while paths @Str.count 0 > do
+      ':' path paths str-chop-by-delim
+
+      tmp-end
+      path @Str                  tmp-append drop
+      "/"                        tmp-append drop
+      file-path @ptr cstr-to-str tmp-append drop
+      1                          tmp-alloc  drop  // NULL terminator
+
+      envp swap
+      argvp @ptr swap
+      execve drop
+    end
+  end
+  drop
+
+  here eputs ": ERROR: could not find executable `" eputs file-path @ptr cstr-to-str eputs "`\n" eputs
+  1 exit
+end
+
+/// Appends an item to a fixed size array
+/// returns `true` when succeeds, `false` when overflow
+proc append-item
+  int // item size
+  ptr // item
+  int // array capacity
+  ptr // array
+  ptr // array count
+  --
+  int  // index of the appended item
+  bool // true - appended, false - not enough space
+in
+  memory count sizeof(ptr) end
+  count !ptr
+  memory array sizeof(ptr) end
+  array !ptr
+
+  count @ptr @int > if
+    over
+    count @ptr @int *
+    array @ptr +ptr
+    memcpy drop
+
+    count @ptr @int
+    count @ptr inc64
+
+    true
+  else
+    drop drop
+    0 false
+  end
+end
+
+/// Convert unsigned integer to string stored in the tmp scratch buffer
+proc tmp-utos
+  int
+  --
+  int ptr
+in
+  memory buffer sizeof(ptr) end
+  PUTU_BUFFER_CAP tmp-alloc buffer !ptr
+
+  dup 0 = if
+    drop
+    buffer @ptr PUTU_BUFFER_CAP ptr+ 1 ptr-
+    '0' over !64
+    1 swap
+  else
+    buffer @ptr PUTU_BUFFER_CAP ptr+
+    while over 0 != do
+      1 ptr- dup rot
+      10 divmod
+      rot swap '0' + swap !8 swap
+    end
+
+    swap drop
+
+    dup buffer @ptr PUTU_BUFFER_CAP ptr+ swap ptr-diff swap
+  end
+end
+
+// TODO: there is no way to unmap the file
+proc map-file
+  ptr // file-path-cstr
+  --
+  int ptr
+in
+  memory file-path-cstr sizeof(ptr) end
+  file-path-cstr !64
+
+  0                   // mode
+  O_RDONLY            // flags
+  file-path-cstr @ptr // pathname
+  AT_FDCWD            // dirfd
+  openat
+
+  dup 0 < if
+    "ERROR: could not open file " eputs file-path-cstr @ptr cstr-to-str eputs "\n" eputs
+    1 exit
+  end
+
+  memory fd sizeof(u64) end
+  fd !64
+
+  memory statbuf sizeof(stat) end
+  statbuf fd @64 fstat 0 < if
+    "ERROR: could not determine the size of file " eputs file-path-cstr @ptr cstr-to-str eputs "\n" eputs
+    1 exit
+  end
+
+  memory content sizeof(Str) end
+  statbuf @stat.st_size content !Str.count
+
+  content @Str.count 0 > if
+    0                        // offset
+    fd @64                   // fd
+    MAP_PRIVATE              // flags
+    PROT_READ                // prot
+    content @Str.count       // length
+    NULL                     // addr
+    mmap
+    cast(ptr)
+    content !Str.data
+
+    content @Str.data cast(int) 0 < if
+      "ERROR: could not memory map file " eputs file-path-cstr @ptr cstr-to-str eputs "\n" eputs
+      1 exit
+    end
+
+    content @Str
+  else
+    0 NULL
+  end
+end
+
+proc ?file-exist ptr -- bool in
+  memory statbuf sizeof(stat) end
+
+  statbuf swap stat
+
+  dup 0 = if
+    drop true
+  else dup ENOENT neg = if*
+    drop false
+  else
+    drop false
+    here eputs ": ERROR: ?file-exist failed\n" eputs
+    1 exit
+  end
+end
+
+proc ?shell-safe-char
+  int
+  --
+  bool
+in
+  memory ch sizeof(int) end
+  ch !int
+  "@%+=:,./-_"
+  while
+    over 0 > if
+      dup @8 ch @int !=
+    else false end
+  do
+    swap 1 -
+    swap 1 ptr+
+  end
+  drop 0 >
+  ch @int ?alnum
+  lor
+end
+
+proc ?shell-safe-str
+  int ptr
+  --
+  bool
+in
+  while
+    over 0 > if
+      dup @8 ?shell-safe-char
+    else false end
+  do
+    swap 1 -
+    swap 1 ptr+
+  end
+  drop 0 =
+end
+
+proc shell-escape
+  int ptr
+  --
+  int ptr
+in
+  memory result sizeof(ptr) end
+  over over ?shell-safe-str lnot if
+    tmp-end result !ptr
+    "'" tmp-append drop
+      while over 0 > do
+        dup @8
+
+        dup '\'' = if
+          drop
+          "'\"'\"'" tmp-append drop
+        else
+          1 tmp-alloc !8
+        end
+
+        swap 1 -
+        swap 1 ptr+
+      end drop drop
+    "'" tmp-append drop
+
+    tmp-end result @ptr ptr-diff
+    result @ptr
+  end
+end
+
+memory timeit-begin sizeof(timespec) end
+
+proc timeit/from-here in
+  timeit-begin CLOCK_MONOTONIC clock_gettime 0 < if
+    "ERROR: timeit/start: could not get current time for some reason\n" eputs
+    1 exit
+  end
+end
+
+const 1e9 1000000000 end
+
+// TODO: timeit/to-here has too much responsibility
+// Logging and disabling/enabling thereof should not be a concern of it.
+proc timeit/to-here
+  int ptr // message
+  bool    // silent
+in
+  memory timeit-end sizeof(timespec) end
+  lnot if
+    timeit-end CLOCK_MONOTONIC clock_gettime 0 < if
+      "ERROR: timeit/end: could not get current time for some reason\n" eputs
+      1 exit
+    end
+    puts " took " puts
+
+    timeit-end   timespec.tv_sec ptr+ @int
+    timeit-begin timespec.tv_sec ptr+ @int
+    -
+    1e9 *
+    timeit-end   timespec.tv_nsec ptr+ @int
+    timeit-begin timespec.tv_nsec ptr+ @int
+    -
+    +
+      dup 1e9 /        putu
+      "."              puts
+      dup 1e9 % 9      put0u
+      " secs\n"        puts
+    drop
+  else
+    drop drop
+  end
+end
+
+proc str-rfind
+  int ptr
+  int
+  --
+  int
+in
+  memory needle sizeof(int) end
+  needle !int
+
+  memory str sizeof(Str) end
+  str !Str
+
+  0
+  while
+    dup str @Str.count < if
+      str @Str.count over - 1 -
+      str @Str.data swap ptr+
+      @8 needle @int !=
+    else false end
+  do
+    1 +
+  end
+
+  dup str @Str.count < if
+    str @Str.count swap - 1 -
+  else
+    drop 0 1 -
+  end
+end
+
+// TODO: `"/" dirname` removes the last slash
+proc dirname
+  int ptr
+  --
+  int ptr
+in
+  memory path sizeof(Str) end
+  path !Str
+
+  path @Str '/' str-rfind 1 +
+  path !Str.count
+
+  path ?str-empty if
+    "." path !Str
+  else path @Str "/" streq lnot if*
+    path str-chop-one-right
+  end
+
+  path @Str
+end
+
+proc putch
+  int
+in
+  memory buf sizeof(int) end
+  buf !8
+  1 buf puts
+end
+
+proc remove-ext
+  int ptr
+  --
+  int ptr
+in
+  memory path sizeof(Str) end
+  path !Str
+
+  path @Str '/' str-rfind
+  path @Str '.' str-rfind
+
+  over over < if
+    swap drop path @Str.data
+  else
+    drop drop path @Str
+  end
+end
+
+// TODO: we need a better way of managing complex procedure contexts
+memory cmd-dev-null-stdout sizeof(bool) end
+
+// # Run external command
+//
+// Usage example:
+// ```porth
+// tmp-end
+//   "echo"c tmp-append-ptr
+//   "uwu"c  tmp-append-ptr
+//   NULL    tmp-append-ptr
+//   dup true cmd-echoed
+// tmp-rewind
+// ```
+//
+// This runs external command `echo uwu`
+proc cmd-echoed
+  ptr   // array of cstrs representing the command we are running
+  bool  // echo the command to stdout
+in
+  let cmd echo in
+    echo if
+      "[CMD]" puts
+      cmd while dup @ptr NULL ptr!= do
+        " " puts
+        dup @ptr cstr-to-str shell-escape puts
+        8 ptr+
+      end drop
+      "\n" puts
+    end
+
+    memory wstatus sizeof(u64) end
+
+    fork
+
+    let pid in
+      pid 0 = if
+        // child process
+        cmd-dev-null-stdout @bool if
+          // oldfd
+          stdout
+
+          // newfd
+          0                   // mode
+          O_RDONLY            // flags
+          "/dev/null"c        // pathname
+          AT_FDCWD // dirfd
+          openat
+
+          dup 0 < if
+            here eputs ": ERROR: could not open /dev/null to silence the command in cmd-echoed\n" eputs
+            1 exit
+          end
+
+          dup2 0 < if
+            here eputs ": ERROR: could not reopen /dev/null as stdout for child process in cmd-echoed\n" eputs
+            1 exit
+          end
+        end
+
+        cmd @ptr
+        cmd
+        execvp
+      else pid 0 > if*
+        // parent process
+        while
+          NULL
+          0
+          wstatus
+          -1
+          wait4 0 < if
+            "[ERROR] could not wait until the child process has finished executing\n" eputs
+            1 exit
+          end
+
+          wstatus @int
+            dup WIFEXITED if
+              dup WEXITSTATUS
+                dup 0 > if
+                  dup exit
+                end
+              drop
+
+              false // break
+            else dup WIFSIGNALED if*
+              "ERROR: the child process was terminated by a signal " eputs
+              dup WTERMSIG                                           eputu
+              "\n"                                                   eputs
+              255 exit
+
+              false // break
+            else dup WIFSTOPPED if*
+              true  // continue
+            else dup WIFCONTINUED if*
+              true  // continue
+            else
+              here eputs ": unreachable\n" eputs
+              1 exit
+              false // break
+            end
+          swap drop
+        do end
+      else
+        "[ERROR] could not fork a child\n" eputs
+        1 exit
+      end
+    end
+  end
+end
+
+// Heavily inspired by Python's os.path.normpath
+proc normpath int ptr -- int ptr in
+  let n s in
+    tmp-end // start of the components stack
+    0       // m - size of the components stack
+    n s
+
+    // count leading slashes
+    n s 0
+    while
+      peek n s _ in
+        n 0 > if s @8 '/' = else false end
+      end
+    do
+      let n s count in
+        n 1 -
+        s 1 ptr+
+        count 1 +
+      end
+    end
+    let _ _ count in count end
+  end
+
+  let leading-slashes in
+    while peek n _ in n 0 > end do
+      '/' str-chop-by-delim-2
+      let m n1 s1 n0 s0 in
+        n0 s0 ".." streq if
+          m 0 > if
+            tmp-end sizeof(Str) ptr-
+            let p in
+              p @Str ".." streq if
+                n0 s0 sizeof(Str) tmp-alloc !Str
+                m 1 +
+              else
+                p tmp-rewind
+                m 1 -
+              end
+            end
+          else
+            leading-slashes 0 > if
+              m
+            else
+              n0 s0 sizeof(Str) tmp-alloc !Str
+              m 1 +
+            end
+          end
+        else n0 s0 "." streq lnot if n0 s0 "" streq else true end if*
+          m // ignore
+        else
+          n0 s0 sizeof(Str) tmp-alloc !Str
+          m 1 +
+        end
+        n1 s1
+      end
+    end
+
+    let start m _ _ in
+      tmp-end
+      let s in
+        m 0 > if
+          0 while dup m < do
+            // NOTE: POSIX allows one or two initial slashes, but treats three or more
+            // as single slash.
+            dup 0 > if
+              "/" tmp-append drop
+            else leading-slashes 2 = if*
+              "//" tmp-append drop
+            else leading-slashes 0 > if*
+              "/" tmp-append drop
+            end
+            dup sizeof(Str) * start +ptr @Str tmp-append drop
+            1 +
+          end drop
+        else
+          "." tmp-append drop
+        end
+        tmp-end s ptr-diff s
+      end
+    end
+  end
+end
+
+proc isabs int ptr -- bool in
+  let n s in
+    n 0 > if s @8 '/' = else false end
+  end
+end
+
+proc abspath int ptr -- int ptr in
+  let n s in
+    n s isabs if
+      n s normpath
+    else
+      PATH_MAX tmp-alloc
+      let buf in
+        PATH_MAX buf getcwd 0 < if
+          "ERROR: getcwd failed\n" eputs
+          1 exit
+        end
+        tmp-end
+        buf cstr-to-str tmp-append drop
+        "/"             tmp-append drop
+        n s             tmp-append drop
+        let s in tmp-end s ptr-diff s normpath end
+      end
+    end
+  end
+end
+
+const BFD_CAP 64 1024 * end
+const Bfd.fd    sizeof(int) offset end
+const Bfd.buff  sizeof(ptr) offset end
+const Bfd.size  sizeof(int) offset end
+const sizeof(Bfd) reset end
+
+proc bflush ptr in
+  dup Bfd.size ptr+       swap
+  dup Bfd.fd ptr+ @int    swap
+      Bfd.buff ptr+ @ptr
+  let psize fd buff in
+    psize @int buff fd fputs
+    0 psize !int
+  end
+end
+
+proc bputs
+  int ptr
+  ptr
+in
+  let n s bfd in
+    bfd Bfd.size ptr+
+    bfd Bfd.fd ptr+ @int
+    bfd Bfd.buff ptr+ @ptr
+    let psize fd buff in
+      psize @int n + BFD_CAP > if bfd bflush end
+      psize @int n + BFD_CAP > if
+        n s fd fputs
+      else
+        n s buff psize @int ptr+ memcpy drop
+        psize n inc64-by
+      end
+    end
+  end
+end
+
+proc bputu
+  int
+  ptr
+in
+  let x bfd in
+    tmp-end
+      x tmp-utos bfd bputs
+    tmp-rewind
+  end
+end

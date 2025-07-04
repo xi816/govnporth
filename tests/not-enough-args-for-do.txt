@@ -1,0 +1,10 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 154
+./tests/not-enough-args-for-do.porth:3:4: ERROR: `do` is not preceded by `while`
+./tests/not-enough-args-for-do.porth:3:1: NOTE: preceded by `if` instead
+

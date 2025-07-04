@@ -1,0 +1,20 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 0
+:b stdout 48
+10
+20
+30
+60
+110
+200
+370
+680
+1250
+2300
+4230
+7780
+
+:b stderr 0
+

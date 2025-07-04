@@ -1,0 +1,11 @@
+proc foo ptr ptr in
+  let a b in
+    a b + drop
+  end
+end
+
+proc main in
+  69 cast(ptr)
+  420 cast(ptr)
+  foo
+end

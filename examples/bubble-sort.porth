@@ -1,0 +1,52 @@
+include "std.porth"
+
+const N 20 end
+const M 69 end
+
+memory xs sizeof(u64) N * end
+
+proc dump-xs in
+  0 while dup N < do
+    dup sizeof(u64) * xs +ptr @64 putu
+    " " puts
+    1 +
+  end drop
+end
+
+proc init-xs in
+  69 srand
+  0 while dup N < do
+    rand M mod
+    over sizeof(u64) * xs +ptr !64
+    1 +
+  end drop
+end
+
+proc sort-xs in
+  memory i sizeof(u64) end
+  N 1 - i !64
+  while i @64 1 > do
+    0 while dup i @64 < do
+      dup   sizeof(u64) * xs +ptr
+      i @64 sizeof(u64) * xs +ptr
+      let a b in
+        a @int b @int > if
+          a @int
+          b @int
+          a !int
+          b !int
+        end
+      end
+      1 +
+    end drop
+    i dec64
+  end
+end
+
+proc main in
+  "-- Bubble Sort --\n" puts
+  init-xs
+  "Unsorted: " puts dump-xs "\n" puts
+  sort-xs
+  "Sorted:   " puts dump-xs "\n" puts
+end

@@ -1,0 +1,41 @@
+include "std.porth"
+
+proc main in
+  // shift left
+  1  3 shl print
+
+  "------------------------------\n" puts
+
+  // shift right
+  32 3 shr print
+
+  "------------------------------\n" puts
+
+  // bit or
+  1 2 or print
+
+  "------------------------------\n" puts
+
+  // bit and
+  1 2 and print
+
+  "------------------------------\n" puts
+
+  // not
+  0 not 1 + print
+
+  "------------------------------\n" puts
+  // TODO: `print` intrinsics cannot print negative numbers
+  //
+  // To be honest, I'm not sure if we still need it to be an intrinsic.
+  // `print` intrinsic was introduce as a hack early on in the development
+  // and quite frankly is not needed anymore since we can reimplement it
+  // in porth relatively easily using `putu` or the like.
+  //
+  // However, it is very handy during the debugging of the compiler when you don't want
+  // to include the entire standard library since it will clutter the compiler output.
+  // This could be fixed by implementing dead code elimination though.
+  //
+  // - rexim 24.01.2022
+  1234 not print
+end

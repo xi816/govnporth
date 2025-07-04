@@ -1,0 +1,9 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 255
+:b stdout 0
+
+:b stderr 55
+ERROR: the child process was terminated by a signal 11
+

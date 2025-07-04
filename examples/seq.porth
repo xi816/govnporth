@@ -1,0 +1,27 @@
+include "std.porth"
+
+proc main in
+  argc 2 < if
+    "Usage: seq <limit>\n" eputs
+    "ERROR: no limit is provided\n" eputs
+    1 exit
+  end
+
+  1 nth_argv
+
+  let arg in
+    arg cstr-to-str try-parse-int lnot if
+      "ERROR: `"                     eputs
+      arg cstr-to-str                eputs
+      "` is not a correct integer\n" eputs
+      1 exit
+    end
+  end
+
+  let limit in
+    0 while dup limit < do
+      dup print
+      1 +
+    end drop
+  end
+end

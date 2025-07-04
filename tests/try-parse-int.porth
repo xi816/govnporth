@@ -1,0 +1,29 @@
+include "std.porth"
+
+proc test-try-parse-int int ptr in
+  let n s in
+    n s
+    try-parse-int
+    let x ok in
+      ok if
+        "Successfully parsed " puts
+        x                      puti
+        "\n"                   puts
+      else
+        "\""                   puts
+        n s                    puts
+        "\" is not a number\n" puts
+      end
+    end
+  end
+end
+
+proc main in
+  ""           test-try-parse-int
+  "0"          test-try-parse-int
+  "1234"       test-try-parse-int
+  "0987654321" test-try-parse-int
+  "abcd"       test-try-parse-int
+  "-1234"      test-try-parse-int
+  "-"          test-try-parse-int
+end

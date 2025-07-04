@@ -1,0 +1,113 @@
+include "std.porth"
+
+const PORT 6969 end
+
+const CLIENT_BUF_CAP 1024 end
+memory client_buf CLIENT_BUF_CAP end
+memory request-count sizeof(int) end
+
+proc main in
+  memory servaddr sizeof(sockaddr) end
+  memory cliaddr sizeof(sockaddr) end
+  memory clilen sizeof(u32) end
+
+  0 SOCK_STREAM AF_INET socket
+  let fd in
+    fd 0 < if
+      "ERROR: could not create TCP socket\n" eputs
+      1 exit
+    end
+
+    "Successfully created a socket: " puts
+    fd                                putu
+    "\n"                              puts
+
+    sizeof(sockaddr) 0 servaddr memset drop
+    AF_INET      servaddr sockaddr_in.sin_family ptr+ !16
+    INADDR_LOCAL servaddr sockaddr_in.sin_addr ptr+ !32
+    PORT htons   servaddr sockaddr_in.sin_port ptr+ !16
+
+    sizeof(sockaddr) servaddr fd bind 0 < if
+      "ERROR: could not bind the socket\n" eputs
+      1 exit
+    end
+
+    "Successfully bound the socket to port " puts
+    PORT                                     putu
+    "\n"                                     puts
+
+    5 fd listen 0 < if
+      "ERROR: could not start listening\n" eputs
+      1 exit
+    end
+
+    "Successfully started listening\n" puts
+
+    while
+      clilen cliaddr fd accept
+      let connfd in
+        connfd 0 < if
+          "ERROR: server accept failed\n" eputs
+          1 exit
+        end
+
+        "Server accepted the client\n" puts
+
+        CLIENT_BUF_CAP client_buf connfd read
+        let client_buf_size in
+          client_buf_size 0 < if
+            "ERROR: could not read the client request\n" eputs
+            1 exit
+          end
+
+          client_buf_size client_buf '\n' str-chop-by-delim-2
+          let _ _ n s in n s end
+          ' ' str-chop-by-delim-2
+          let n s _ _ in n s end
+          ' ' str-chop-by-delim-2
+          let _ _ n s in n s end
+
+          let n s in
+            n s "/quit" streq if
+              "HTTP/1.1 200 OK\r\n"                  connfd fputs
+              "Server: HTTPorth\r\n"                 connfd fputs
+              "Content-Type: text/html\r\n"          connfd fputs
+              "Connection: Closed\r\n"               connfd fputs
+              "\r\n"                                 connfd fputs
+              "<h1>Shutting down the server!</h1>\n" connfd fputs
+
+              false // break
+            else n s "/" streq if*
+              request-count inc64
+
+              "HTTP/1.1 200 OK\r\n"                  connfd fputs
+              "Server: HTTPorth\r\n"                 connfd fputs
+              "Content-Type: text/html\r\n"          connfd fputs
+              "Connection: Closed\r\n"               connfd fputs
+              "\r\n"                                 connfd fputs
+              "<h1>Hello from HTTPorth!</h1>\n"      connfd fputs
+              "<p>This page was requested "          connfd fputs
+              request-count @int                     connfd fputu
+              " times</p>\n"                         connfd fputs
+              "<p><a href=\"/quit\">Quit</a></p>"    connfd fputs
+
+              true // continue
+            else
+              "HTTP/1.1 404 NOT OK\r\n"              connfd fputs
+              "Server: HTTPorth\r\n"                 connfd fputs
+              "Content-Type: text/html\r\n"          connfd fputs
+              "Connection: Closed\r\n"               connfd fputs
+              "\r\n"                                 connfd fputs
+              "<h1>404!</h1>\n"                      connfd fputs
+
+              true // continue
+            end
+          end
+        end
+        connfd close drop
+      end
+    do end
+
+    fd close drop
+  end
+end

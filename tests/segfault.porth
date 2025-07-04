@@ -1,0 +1,6 @@
+include "std.porth"
+
+proc main in
+  0 cast(ptr) @64 print
+  1 exit
+end

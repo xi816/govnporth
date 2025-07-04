@@ -1,0 +1,10 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 263
+./tests/if-else-fail.porth:1:6: ERROR: Unhandled data on the stack at the end of the procedure. The expected elements on the stack are listed after the `--` operator. Here are the elements currently on the stack:
+./tests/if-else-fail.porth:2:33: NOTE: type `int`
+

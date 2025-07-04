@@ -1,0 +1,5 @@
+proc main in
+  while 1 cast(bool) do
+    1
+  end
+end

@@ -1,0 +1,5 @@
+inline proc foo in
+  memory bar 69 end
+end
+
+proc main in end

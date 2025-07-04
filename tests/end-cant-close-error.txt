@@ -1,0 +1,10 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 194
+./tests/end-cant-close-error.porth:1:7: ERROR: `end` can only close `if`, `if*`, `else`, `do`, `proc`, `let` or `peek` blocks
+./tests/end-cant-close-error.porth:1:1: NOTE: found `while` instead
+

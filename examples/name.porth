@@ -1,0 +1,22 @@
+include "std.porth"
+
+const NAME_CAPACITY 256 end
+memory name NAME_CAPACITY end
+
+proc main in
+  "What is your name? " puts
+  
+  NAME_CAPACITY name stdin read
+  dup 0 <= if
+    "ERROR: could not read your name, sorry ( ._.)\n" eputs
+    1 exit
+  end
+  
+  name over ptr+ 1 ptr- @8 '\n' = if
+    1 -
+  end
+  
+  "Hello, " puts
+  name puts
+  "! ( ^-^)/\n" puts
+end

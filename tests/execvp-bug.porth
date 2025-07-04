@@ -1,0 +1,27 @@
+include "std.porth"
+
+proc main in
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" tmp-append drop
+  tmp-clean
+
+  memory argvp sizeof(ptr) 3 * end
+
+  "echo"c argvp 0 8 * ptr+ !ptr
+  "uwu"c  argvp 1 8 * ptr+ !ptr
+  NULL    argvp 2 8 * ptr+ !ptr
+
+  argvp @ptr argvp execvp
+end

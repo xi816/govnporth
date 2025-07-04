@@ -1,0 +1,9 @@
+:i argc 0
+:b stdin 0
+
+:i returncode 1
+:b stdout 0
+
+:b stderr 92
+./tests/weird-week.porth:12:8: ERROR: Static Assertion Failed: You have a weird week, buddy
+

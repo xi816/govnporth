@@ -1,0 +1,14 @@
+proc main in
+  10 20 30
+  while
+    peek a _ _ in a 10000 < end
+  do
+    let a b c in
+      a print
+      b
+      c
+      a b c + +
+    end
+  end
+  drop drop drop
+end
